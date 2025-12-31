@@ -1,0 +1,20 @@
+{
+    "name": "Relay",
+    "description": "Transfer work shifts between apps and autofill timesheets.",
+    "version": "1.0",
+    "manifest_version": 3,
+    "icons": {
+        "32": "icons/icon32.png",
+        "64": "icons/icon64.png"
+    },
+    "action" : {
+        "default_popup": "index.html"
+    },
+    "permissions" : [ 
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://*/*",
+        "http://*/*"
+    ]
+}
