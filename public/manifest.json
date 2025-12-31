@@ -11,8 +11,12 @@
         "default_popup": "index.html"
     },
     "permissions" : [ 
-        "scripting"
+        "scripting",
+        "sidePanel"
     ],
+    "side_panel": {
+        "default_path": "sidepanel.html"
+    },
     "host_permissions": [
         "https://*/*",
         "http://*/*"
