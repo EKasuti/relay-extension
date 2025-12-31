@@ -4,10 +4,10 @@ import './App.css'
 function App() {
 
   const handleOpenSidePanel = async () => {
-    const window = await chrome.windows.getCurrent();
-    if (window.id) {
+    const currentWindow = await chrome.windows.getCurrent();
+    if (currentWindow.id) {
       // Opens the side panel for the current window
-      chrome.sidePanel.open({ windowId: window.id });
+      chrome.sidePanel.open({ windowId: currentWindow.id });
     }
   }
 
