@@ -3,14 +3,12 @@ import './App.css'
 
 function App() {
 
-  const onclick = async () => {
-    const [tab] = await chrome.tabs.query({ active: true  });
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id! },
-      func: () => {
-        alert('Hello from Relay extension!');
-      }
-    })
+  const handleOpenSidePanel = async () => {
+    const currentWindow = await chrome.windows.getCurrent();
+    if (currentWindow.id) {
+      // Opens the side panel for the current window
+      chrome.sidePanel.open({ windowId: currentWindow.id });
+    }
   }
 
   return (
@@ -22,8 +20,8 @@ function App() {
         </a>
       </div>
       <div className="card">
-        <button onClick={onclick}>
-          Click Me
+        <button onClick={handleOpenSidePanel}>
+          Open Side Panel
         </button>
       </div>
     </>
