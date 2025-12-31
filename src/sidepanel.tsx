@@ -8,9 +8,9 @@ createRoot(document.getElementById('root')!).render(
         <>
             <h1>Relay Sidepanel</h1>
             <div>
-                <a target="_blank">
+                <div>
                     <img src={relayLogo} className="logo" alt="Relay logo" />
-                </a>
+                </div>
             </div>
             <div className="card">
                 <p>This is the side panel content.</p>
