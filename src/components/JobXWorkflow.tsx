@@ -170,10 +170,37 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                 <TimesheetDetail
                     timesheet={activeTimesheet}
                     shifts={shifts.filter(s => {
-                        const d = new Date(s.date);
+                        const shiftDate = new Date(s.date);
                         const start = new Date(activeTimesheet.startDate);
                         const end = new Date(activeTimesheet.endDate);
-                        return d >= start && d <= end;
+
+                        // If any of the dates cannot be parsed, exclude the shift from this timesheet.
+                        if (
+                            isNaN(shiftDate.getTime()) ||
+                            isNaN(start.getTime()) ||
+                            isNaN(end.getTime())
+                        ) {
+                            return false;
+                        }
+
+                        // Normalize to date-only (year, month, day) to avoid time-zone/off-by-one issues.
+                        const shiftDay = new Date(
+                            shiftDate.getFullYear(),
+                            shiftDate.getMonth(),
+                            shiftDate.getDate()
+                        );
+                        const startDay = new Date(
+                            start.getFullYear(),
+                            start.getMonth(),
+                            start.getDate()
+                        );
+                        const endDay = new Date(
+                            end.getFullYear(),
+                            end.getMonth(),
+                            end.getDate()
+                        );
+
+                        return shiftDay >= startDay && shiftDay <= endDay;
                     })}
                     jobTitle={activeJobTitle || 'Unknown Job'}
                     onBack={handleBackFromDetail}
