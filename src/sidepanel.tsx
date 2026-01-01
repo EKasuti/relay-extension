@@ -28,9 +28,8 @@ function Sidepanel() {
 
         // Check URL
         if (!tab.url?.includes('dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx')) {
-            if (confirm('You need to be on the Dartmouth JobX dashboard to import hires. Go there now?')) {
-                await chrome.tabs.create({ url: 'https://dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx' });
-            }
+            alert('You need to be on the Dartmouth JobX dashboard to import hires. A new tab will be opened for you.');
+            await chrome.tabs.create({ url: 'https://dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx' });
             return;
         }
 
