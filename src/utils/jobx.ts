@@ -303,7 +303,7 @@ export const checkValidationErrors = (): { hasError: boolean; message?: string }
         }
     }
 
-    // Also check for inline validators if they are visibl
+    // Also check for inline validators if they are visible
     const validators = Array.from(document.querySelectorAll('span[id*="RequiredFieldValidator"]'));
     const visibleValidators = validators.filter(v => {
         const style = window.getComputedStyle(v);
