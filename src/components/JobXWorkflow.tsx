@@ -111,12 +111,24 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
         const res = await execute(returnToTimesheetList, [], 'MAIN');
         if (!res?.result.success) {
         } else {
-            setTimeout(async () => {
+            const maxAttempts = 5;
+            const delayMs = 500;
+
+            const pollScrape = async (attempt: number) => {
                 const scrapeResult = await execute(scrapeTimesheets);
                 if (scrapeResult?.result.success && scrapeResult.result.data) {
                     setScrapedTimesheets(scrapeResult.result.data as Timesheet[]);
+                    return;
                 }
-            }, 1000);
+                if (attempt < maxAttempts) {
+                    setTimeout(() => {
+                        pollScrape(attempt + 1);
+                    }, delayMs);
+                }
+            };
+
+            // Start polling immediately rather than waiting a fixed delay once
+            pollScrape(0);
         }
     };
 
