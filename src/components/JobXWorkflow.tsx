@@ -4,7 +4,14 @@ import ManualEntry from './ManualEntry';
 import ShiftList from './ShiftList';
 import TimesheetSelection from './TimesheetSelection';
 import TimesheetDetail from './TimesheetDetail';
-import { scrapeTimesheets, findLinkAndUrl, startTimesheet, returnToTimesheetList } from '../utils/jobx';
+import {
+    scrapeTimesheets,
+    findLinkAndUrl,
+    startTimesheet,
+    returnToTimesheetList,
+    fillShiftRow,
+    checkValidationErrors
+} from '../utils/jobx';
 
 interface JobXWorkflowProps {
     shifts: Shift[];
@@ -131,6 +138,76 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
         }
     };
 
+    const handleTransferShifts = async (selectedShifts: Shift[]) => {
+        setErrorMessage(null);
+        let currentShifts = [...shifts];
+
+        // Process shifts sequentially
+        for (const shift of selectedShifts) {
+            // Skip already filled shifts if needed, but user might want to retry error ones.
+            if (shift.fillStatus === 'success') continue;
+
+            const result = await execute(fillShiftRow, [shift.date, shift.startTime, shift.endTime], 'MAIN');
+
+            if (result?.result && !result.result.success) {
+                // Update shift with error
+                const msg = result.result.debug ? `${result.result.message} (${result.result.debug})` : result.result.message;
+
+                currentShifts = currentShifts.map(s =>
+                    (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
+                        ? { ...s, fillStatus: 'error', fillMessage: msg } as Shift
+                        : s
+                );
+                setShifts(currentShifts);
+                continue;
+            } else if (!result?.result) {
+                setErrorMessage('Execution failed.');
+                break;
+            }
+
+            await new Promise(r => setTimeout(r, 2000));
+
+            let loaded = false;
+            for (let i = 0; i < 20; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                // Check if table exists again
+                const check = await execute(() => !!document.querySelector('table.timesheetAddEntryTable') || !!document.getElementById('Skin_body_ctl01_AddButton_'));
+                if (check?.result) { loaded = true; break; }
+            }
+
+            if (!loaded) {
+                setErrorMessage(`Timeout waiting for reload after saving shift on ${shift.date}`);
+                currentShifts = currentShifts.map(s =>
+                    (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
+                        ? { ...s, fillStatus: 'error', fillMessage: 'Timeout waiting for reload' } as Shift
+                        : s
+                );
+                setShifts(currentShifts);
+                break; // Stop on timeout
+            }
+
+            // Check for Validation Errors on the new page
+            const validationCheck = await execute(checkValidationErrors, [], 'MAIN');
+            if (validationCheck?.result && validationCheck.result.hasError) {
+                currentShifts = currentShifts.map(s =>
+                    (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
+                        ? { ...s, fillStatus: 'error', fillMessage: validationCheck.result.message || 'Validation Error' } as Shift
+                        : s
+                );
+                setShifts(currentShifts);
+                continue;
+            }
+
+            // Mark as success
+            currentShifts = currentShifts.map(s =>
+                (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
+                    ? { ...s, fillStatus: 'success', fillMessage: 'Filled' } as Shift
+                    : s
+            );
+            setShifts(currentShifts);
+        }
+    };
+
     return (
         <div className="w-full">
             {errorMessage && (
@@ -204,6 +281,7 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                     jobTitle={activeJobTitle || 'Unknown Job'}
                     onBack={handleBackFromDetail}
                     onAddShift={() => setStep('manual-entry')}
+                    onTransferShifts={handleTransferShifts}
                 />
             )}
 
