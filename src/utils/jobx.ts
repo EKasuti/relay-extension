@@ -125,7 +125,12 @@ export const startTimesheet = (rowIndex: number): { success: boolean; message: s
         link.click();
         return { success: true, message: `Clicked "${text}"` };
     } catch (e) {
-        return { success: false, message: 'Error clicking link' };
+        console.error('Error clicking timesheet link:', e);
+        const errorMessage =
+            e instanceof Error
+                ? `Error clicking link: ${e.message}`
+                : `Error clicking link: ${String(e)}`;
+        return { success: false, message: errorMessage };
     } finally {
         window.confirm = originalConfirm;
     }
