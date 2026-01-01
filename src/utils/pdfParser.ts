@@ -29,6 +29,9 @@ interface ParsedShiftLine {
     y: number;
 }
 
+const Y_COORDINATE_TOLERANCE = 5;
+const TRANSFORM_Y_INDEX = 5;
+
 /**
  * Parses shifts from a PDF file.
  * @param file The PDF file to parse.
@@ -64,11 +67,10 @@ export async function parseShiftsFromPdf(file: File): Promise<Shift[]> {
 
         // Group items by Y coordinate (lines)
         const lines: { y: number; items: TextItem[] }[] = [];
-        const yTolerance = 5;
 
         items.forEach(item => {
-            const y = item.transform[5];
-            const line = lines.find(l => Math.abs(l.y - y) < yTolerance);
+            const y = item.transform[TRANSFORM_Y_INDEX];
+            const line = lines.find(l => Math.abs(l.y - y) < Y_COORDINATE_TOLERANCE);
             if (line) {
                 line.items.push(item);
             } else {
