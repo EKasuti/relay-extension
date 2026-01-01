@@ -213,5 +213,11 @@ export async function parseShiftsFromPdf(file: File): Promise<Shift[]> {
         }
     }
 
+    if (shifts.length === 0) {
+        console.warn(
+            'parseShiftsFromPdf: No shifts were parsed from the provided PDF. ' +
+            'Ensure the file is a valid ConnectTeam export in the expected format.'
+        );
+    }
     return shifts;
 }
