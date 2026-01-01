@@ -5,7 +5,7 @@ interface ShiftListProps {
     shifts: Shift[];
 }
 
-const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; availableJobs?: string[]; onFetchJobs?: () => void; onAutoFill?: (jobTitle: string, shiftsToFill: Shift[]) => void }> = ({ shifts, onAddManualShift, availableJobs = [], onFetchJobs, onAutoFill }) => {
+const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; availableJobs?: string[]; onFetchJobs?: () => void; onAutoFill?: (jobTitle: string) => void }> = ({ shifts, onAddManualShift, availableJobs = [], onFetchJobs, onAutoFill }) => {
     const [selectedType, setSelectedType] = useState<string>('All');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [jobMappings, setJobMappings] = useState<Record<string, string>>({});
