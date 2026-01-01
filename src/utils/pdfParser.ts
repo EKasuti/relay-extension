@@ -196,7 +196,10 @@ export async function parseShiftsFromPdf(file: File): Promise<Shift[]> {
                 }
 
                 if (bestAnchor) {
-                    const fullDate = `${year}-${bestAnchor.date.replace('/', '-')}`;
+                    const [monthStr, dayStr] = bestAnchor.date.split('/');
+                    const month = monthStr.padStart(2, '0');
+                    const day = dayStr.padStart(2, '0');
+                    const fullDate = `${year}-${month}-${day}`;
                     shifts.push({
                         date: fullDate,
                         startTime: shift.startTime,
