@@ -99,11 +99,11 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                 </div>
             </div>
             <div className="space-y-2">
-                {sortedShifts.map((shift, index) => {
+                {sortedShifts.map((shift) => {
                     const mappedJob = jobMappings[shift.jobTitle];
+                    const shiftKey = `${shift.date}-${shift.startTime}-${shift.endTime}-${shift.jobTitle}`;
                     return (
-                        <div key={index} className="flex flex-col gap-1 p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors">
-                            <div className="flex justify-between items-center text-sm">
+                        <div key={shiftKey} className="flex flex-col gap-1 p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors">
                                 <div>
                                     <div className="font-bold text-gray-800 flex items-center gap-2">
                                         {shift.date}
