@@ -95,7 +95,7 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                                         </select>
                                         {onAutoFill && (
                                             <button
-                                                onClick={() => mappedJob && onAutoFill(mappedJob, shifts.filter(s => s.jobTitle === type))}
+                                                onClick={() => mappedJob && onAutoFill(mappedJob, shifts)}
                                                 disabled={!mappedJob}
                                                 className={`px-2 py-1 rounded font-medium transition-colors ${mappedJob
                                                     ? 'bg-blue-600 text-white hover:bg-blue-700'
