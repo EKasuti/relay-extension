@@ -2,6 +2,12 @@
 
 Relay Extension is a Chrome extension designed to help manage shifts, parse PDF schedules from ConnectTeam, and simplify shift entry.
 
+## Features
+
+- **PDF Import**: Extract shift data directly from ConnectTeam export PDFs.
+- **JobX Integration**: Sync active job titles directly from your Dartmouth JobX dashboard.
+- **Smart Mapping**: Automatically map your imported shifts to official JobX job titles with a global mapping tool.
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your machine:
