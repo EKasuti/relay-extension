@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Shift } from '../types';
 
 interface ShiftListProps {
@@ -9,6 +9,24 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
     const [selectedType, setSelectedType] = useState<string>('All');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [jobMappings, setJobMappings] = useState<Record<string, string>>({});
+
+    // Load mappings from storage on mount
+    useEffect(() => {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.get(['jobMappings'], (result) => {
+                if (result.jobMappings) {
+                    setJobMappings(result.jobMappings as Record<string, string>);
+                }
+            });
+        }
+    }, []);
+
+    // Save mappings to storage whenever they change
+    useEffect(() => {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ jobMappings });
+        }
+    }, [jobMappings]);
 
     const uniqueTypes = [...new Set(shifts.map(s => s.jobTitle))];
     const uniqueFilterTypes = ['All', ...uniqueTypes];
@@ -106,6 +124,7 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                     const shiftKey = `${shift.date}-${shift.startTime}-${shift.endTime}-${shift.jobTitle}`;
                     return (
                         <div key={shiftKey} className="flex flex-col gap-1 p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors">
+                            <div className="flex justify-between items-center text-sm">
                                 <div>
                                     <div className="font-bold text-gray-800 flex items-center gap-2">
                                         {shift.date}

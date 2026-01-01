@@ -15,10 +15,12 @@ function Sidepanel() {
     // Navigation State
     const [step, setStep] = useState<'select-source' | 'import-instructions' | 'import-upload' | 'job-matching' | 'manual-entry'>('select-source');
     const [availableJobs, setAvailableJobs] = useState<string[]>([]);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const fetchJobXJobs = async () => {
+        setErrorMessage(null); // Clear previous errors
         if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.scripting) {
-            alert('Chrome APIs not available');
+            setErrorMessage('Chrome APIs not available');
             return;
         }
 
@@ -28,8 +30,9 @@ function Sidepanel() {
 
         // Check URL
         if (!tab.url?.includes('dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx')) {
-            alert('You need to be on the Dartmouth JobX dashboard to import hires. A new tab will be opened for you.');
-            await chrome.tabs.create({ url: 'https://dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx' });
+            if (confirm('You need to be on the Dartmouth JobX dashboard to import hires. Go there now?')) {
+                await chrome.tabs.create({ url: 'https://dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx' });
+            }
             return;
         }
 
@@ -40,8 +43,7 @@ function Sidepanel() {
                     const maxAttempts = 10;
                     const intervalMs = 500;
 
-                    const sleep = (ms: number) =>
-                        new Promise<void>(resolve => setTimeout(resolve, ms));
+                    const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
                     for (let attempt = 0; attempt < maxAttempts; attempt++) {
                         const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
@@ -64,18 +66,7 @@ function Sidepanel() {
                         await sleep(intervalMs);
                     }
 
-                    // After retries, still no required elements
-                    const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
-                    if (!h2) {
-                        return { success: false, message: 'Could not find "Hires" section (timed out waiting for page to load)' };
-                    }
-
-                    const table = document.getElementById('currHireTable');
-                    if (!table) {
-                        return { success: false, message: 'Table #currHireTable not found (timed out waiting for page to load)' };
-                    }
-
-                    return { success: false, message: 'Unknown error while reading JobX hires table' };
+                    return { success: false, message: 'Could not find "Hires" table. Please ensure the page is fully loaded.' };
                 }
             });
 
@@ -83,11 +74,11 @@ function Sidepanel() {
             if (result && result.success && Array.isArray(result.data)) {
                 setAvailableJobs(result.data);
             } else {
-                alert(result?.message || 'Failed to scrape data');
+                setErrorMessage(result?.message || 'Failed to scrape data');
             }
-        } catch (error) {
-            console.error('Script execution failed:', error);
-            alert('Failed to read from page. Make sure you are on the correct tab.');
+        } catch (err) {
+            console.error('Script execution failed:', err);
+            setErrorMessage('Failed to read from page. Make sure you are on the correct tab.');
         }
     };
 
@@ -106,6 +97,13 @@ function Sidepanel() {
             <div className="mb-6">
                 <img src={relayLogo} className="h-12 w-12 hover:scale-110 transition-transform drop-shadow-sm" alt="Relay logo" />
             </div>
+
+            {errorMessage && (
+                <div className="w-full max-w-sm mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200 flex items-center gap-2">
+                    <span className="font-bold">Error:</span> {errorMessage}
+                    <button onClick={() => setErrorMessage(null)} className="ml-auto text-red-500 hover:text-red-700 font-bold">×</button>
+                </div>
+            )}
 
             {step === 'select-source' && (
                 <SourceSelection
