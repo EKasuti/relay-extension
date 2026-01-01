@@ -23,13 +23,14 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
         setSelectedIndices(newSelection);
     };
 
+    // Optimize: Pre-calculate selectable indices to avoid O(n^2) operations in render and handlers
+    const selectableIndices = shifts
+        .map((s, i) => (s.fillStatus !== 'success' ? i : -1))
+        .filter(i => i !== -1);
+
+    const allSelectableSelected = selectableIndices.length > 0 && selectableIndices.every(i => selectedIndices.has(i));
+
     const toggleAll = () => {
-        const selectableIndices = shifts.map((s, i) => ({ s, i })).filter(item => item.s.fillStatus !== 'success').map(item => item.i);
-
-        // If all selectable shifts are already selected, deselect all.
-        // Otherwise, select all selectable shifts.
-        const allSelectableSelected = selectableIndices.length > 0 && selectableIndices.every(i => selectedIndices.has(i));
-
         if (allSelectableSelected) {
             setSelectedIndices(new Set());
         } else {
@@ -65,7 +66,7 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                         <input
                             type="checkbox"
                             className="cursor-pointer"
-                            checked={shifts.length > 0 && shifts.some(s => s.fillStatus !== 'success') && shifts.filter(s => s.fillStatus !== 'success').every((s) => selectedIndices.has(shifts.indexOf(s)))}
+                            checked={allSelectableSelected}
                             onChange={toggleAll}
                             disabled={shifts.every(s => s.fillStatus === 'success')}
                         />

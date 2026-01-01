@@ -228,6 +228,9 @@ export const fillShiftRow = (shiftDate: string, startTime: string, endTime: stri
 
         let h = parseInt(match[1], 10);
         let m = parseInt(match[2], 10);
+
+        if (m < 0 || m > 59) return null;
+
         let period: 'AM' | 'PM';
 
         // Edge case: Check for PM indicators: 'p' or 'pm'

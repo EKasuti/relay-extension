@@ -138,6 +138,25 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
         }
     };
 
+    const SHIFT_SAVE_DELAY_MS = 2000;
+    const PAGE_RELOAD_CHECK_INTERVAL_MS = 1000;
+    const MAX_RELOAD_ATTEMPTS = 20;
+
+    const checkTableExists = () => !!document.querySelector('table.timesheetAddEntryTable') || !!document.getElementById('Skin_body_ctl01_AddButton_');
+
+    const updateShiftStatus = (
+        shiftsArray: Shift[],
+        targetShift: Shift,
+        status: 'success' | 'error',
+        message: string
+    ) => {
+        return shiftsArray.map(s =>
+            (s.date === targetShift.date && s.startTime === targetShift.startTime && s.endTime === targetShift.endTime)
+                ? { ...s, fillStatus: status, fillMessage: message } as Shift
+                : s
+        );
+    };
+
     const handleTransferShifts = async (selectedShifts: Shift[]) => {
         setErrorMessage(null);
         let currentShifts = [...shifts];
@@ -153,11 +172,7 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                 // Update shift with error
                 const msg = result.result.debug ? `${result.result.message} (${result.result.debug})` : result.result.message;
 
-                currentShifts = currentShifts.map(s =>
-                    (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
-                        ? { ...s, fillStatus: 'error', fillMessage: msg } as Shift
-                        : s
-                );
+                currentShifts = updateShiftStatus(currentShifts, shift, 'error', msg);
                 setShifts(currentShifts);
                 continue;
             } else if (!result?.result) {
@@ -165,23 +180,19 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                 break;
             }
 
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, SHIFT_SAVE_DELAY_MS));
 
             let loaded = false;
-            for (let i = 0; i < 20; i++) {
-                await new Promise(r => setTimeout(r, 1000));
+            for (let i = 0; i < MAX_RELOAD_ATTEMPTS; i++) {
+                await new Promise(r => setTimeout(r, PAGE_RELOAD_CHECK_INTERVAL_MS));
                 // Check if table exists again
-                const check = await execute(() => !!document.querySelector('table.timesheetAddEntryTable') || !!document.getElementById('Skin_body_ctl01_AddButton_'));
+                const check = await execute(checkTableExists);
                 if (check?.result) { loaded = true; break; }
             }
 
             if (!loaded) {
                 setErrorMessage(`Timeout waiting for reload after saving shift on ${shift.date}`);
-                currentShifts = currentShifts.map(s =>
-                    (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
-                        ? { ...s, fillStatus: 'error', fillMessage: 'Timeout waiting for reload' } as Shift
-                        : s
-                );
+                currentShifts = updateShiftStatus(currentShifts, shift, 'error', 'Timeout waiting for reload');
                 setShifts(currentShifts);
                 break; // Stop on timeout
             }
@@ -189,21 +200,13 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
             // Check for Validation Errors on the new page
             const validationCheck = await execute(checkValidationErrors, [], 'MAIN');
             if (validationCheck?.result && validationCheck.result.hasError) {
-                currentShifts = currentShifts.map(s =>
-                    (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
-                        ? { ...s, fillStatus: 'error', fillMessage: validationCheck.result.message || 'Validation Error' } as Shift
-                        : s
-                );
+                currentShifts = updateShiftStatus(currentShifts, shift, 'error', validationCheck.result.message || 'Validation Error');
                 setShifts(currentShifts);
                 continue;
             }
 
             // Mark as success
-            currentShifts = currentShifts.map(s =>
-                (s.date === shift.date && s.startTime === shift.startTime && s.endTime === shift.endTime)
-                    ? { ...s, fillStatus: 'success', fillMessage: 'Filled' } as Shift
-                    : s
-            );
+            currentShifts = updateShiftStatus(currentShifts, shift, 'success', 'Filled');
             setShifts(currentShifts);
         }
     };
