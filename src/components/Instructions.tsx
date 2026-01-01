@@ -12,7 +12,7 @@ const Instructions: React.FC<InstructionsProps> = ({ onBack, onNext }) => {
             <div className="text-sm text-gray-600 mb-4 space-y-1">
                 <p>1. Go to your ConnectTeam Timesheets.</p>
                 <p>2. Navigate to the <strong>Operations</strong> tab and click <strong>Time Clock</strong>.</p>
-                <p>3. Select range of date you want to export.</p>
+                <p>3. Select the range of dates you want to export.</p>
                 <p>4. Click <strong>Export</strong> and the file will be automatically downloaded.</p>
                 <p>5. Check your downloads folder for the file.</p>
             </div>
