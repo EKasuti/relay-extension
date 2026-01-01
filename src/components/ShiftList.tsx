@@ -66,6 +66,7 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                                         value={jobMappings[type] || ''}
                                         onChange={(e) => handleMappingChange(type, e.target.value)}
                                         className="bg-white border border-gray-300 text-gray-900 rounded focus:ring-blue-500 focus:border-blue-500 block p-1 outline-none flex-grow max-w-[50%]"
+                                        aria-label={`Map "${type}" to JobX job title`}
                                     >
                                         <option value="">Select JobX Job...</option>
                                         {availableJobs.map(job => (
