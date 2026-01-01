@@ -222,7 +222,12 @@ export const parseTime = (timeStr: string) => {
 /**
  * Fills the timesheet row for a given shift.
  */
-export const fillShiftRow = (shiftDate: string, startTime: string, endTime: string): { success: boolean; message: string; debug?: string } => {
+export const fillShiftRow = (
+    shiftDate: string,
+    start: { hour: string; minute: string; period: string },
+    end: { hour: string; minute: string; period: string }
+): { success: boolean; message: string; debug?: string } => {
+
     const shiftD = new Date(shiftDate);
     // Format: MM/DD/YYYY
     const targetDateStr = `${shiftD.getMonth() + 1}/${shiftD.getDate()}/${shiftD.getFullYear()}`;
@@ -266,23 +271,21 @@ export const fillShiftRow = (shiftDate: string, startTime: string, endTime: stri
     };
 
 
-    const start = parseTime(startTime);
-    const end = parseTime(endTime);
-
-    if (!start || !end) {
-        return { success: false, message: `Failed to parse time. Start: ${startTime}, End: ${endTime}` };
-    }
-
     const debugLog: string[] = [];
 
+    // Check if valid time objects were passed
+    if (!start || !end) {
+        return { success: false, message: `Invalid time objects provided.` };
+    }
+
     // Set Start Time
-    debugLog.push(`Start Input: ${startTime} -> ${start.hour}:${start.minute} ${start.period}`);
+    debugLog.push(`Start Input: ${start.hour}:${start.minute} ${start.period}`);
     debugLog.push(selectOption(`Skin_body_ctl01_StartHour1_${suffix}`, start.hour));
     debugLog.push(selectOption(`Skin_body_ctl01_StartMinute1_${suffix}`, start.minute));
     debugLog.push(selectOption(`Skin_body_ctl01_StartAmPm1_${suffix}`, start.period));
 
     // Set End Time
-    debugLog.push(`End Input: ${endTime} -> ${end.hour}:${end.minute} ${end.period}`);
+    debugLog.push(`End Input: ${end.hour}:${end.minute} ${end.period}`);
     debugLog.push(selectOption(`Skin_body_ctl01_EndHour1_${suffix}`, end.hour));
     debugLog.push(selectOption(`Skin_body_ctl01_EndMinute1_${suffix}`, end.minute));
     debugLog.push(selectOption(`Skin_body_ctl01_EndAmPm1_${suffix}`, end.period));
