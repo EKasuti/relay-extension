@@ -228,7 +228,7 @@ export const fillShiftRow = (shiftDate: string, startTime: string, endTime: stri
 
         let h = parseInt(match[1], 10);
         let m = parseInt(match[2], 10);
-        let period = 'AM'; // Default
+        let period: 'AM' | 'PM';
 
         // Edge case: Check for PM indicators: 'p' or 'pm'
         if (clean.includes('p')) {
