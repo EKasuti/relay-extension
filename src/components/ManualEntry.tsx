@@ -11,7 +11,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
         date: '',
         startTime: '',
         endTime: '',
-        type: ''
+        jobTitle: ''
     });
     const [status, setStatus] = useState<string>('');
 
@@ -55,12 +55,12 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
             startTime: manualShift.startTime,
             endTime: manualShift.endTime,
             totalHours: parseFloat(total.toFixed(2)),
-            jobTitle: manualShift.type || 'Manual Entry',
+            jobTitle: manualShift.jobTitle || 'Manual Entry',
             isMigrated: false
         };
 
         onShiftAdded(newShift);
-        setManualShift({ date: '', startTime: '', endTime: '', type: '' });
+        setManualShift({ date: '', startTime: '', endTime: '', jobTitle: '' });
         setStatus('Shift added manually.');
     };
 
@@ -75,8 +75,8 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
                     <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title *</label>
                     <input
                         type="text"
-                        value={manualShift.type}
-                        onChange={e => setManualShift({ ...manualShift, type: e.target.value })}
+                        value={manualShift.jobTitle}
+                        onChange={e => setManualShift({ ...manualShift, jobTitle: e.target.value })}
                         className="border border-gray-300 rounded w-full p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         placeholder="e.g. Baker Desk"
                     />

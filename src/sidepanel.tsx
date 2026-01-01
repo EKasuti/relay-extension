@@ -61,7 +61,7 @@ function Sidepanel() {
                 />
             )}
 
-            {shifts.length > 0 && (
+            {step === 'job-matching' && shifts.length > 0 && (
                 <ShiftList
                     shifts={shifts}
                     onAddManualShift={() => setStep('manual-entry')}
