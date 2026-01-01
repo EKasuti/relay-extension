@@ -14,6 +14,82 @@ function Sidepanel() {
 
     // Navigation State
     const [step, setStep] = useState<'select-source' | 'import-instructions' | 'import-upload' | 'job-matching' | 'manual-entry'>('select-source');
+    const [availableJobs, setAvailableJobs] = useState<string[]>([]);
+
+    const fetchJobXJobs = async () => {
+        if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.scripting) {
+            alert('Chrome APIs not available');
+            return;
+        }
+
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!tab?.id) return;
+
+        // Check URL
+        if (!tab.url?.includes('dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx')) {
+            alert('You need to be on the Dartmouth JobX dashboard to import hires. A new tab will be opened for you.');
+            await chrome.tabs.create({ url: 'https://dartmouth.studentemployment.ngwebsolutions.com/jobx_userdashboard.aspx' });
+            return;
+        }
+
+        try {
+            const results = await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: async () => {
+                    const maxAttempts = 10;
+                    const intervalMs = 500;
+
+                    const sleep = (ms: number) =>
+                        new Promise<void>(resolve => setTimeout(resolve, ms));
+
+                    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                        const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
+                        const table = document.getElementById('currHireTable');
+
+                        if (h2 && table) {
+                            const jobTitles: string[] = [];
+                            const rows = table.querySelectorAll('tbody tr');
+
+                            rows.forEach(row => {
+                                const firstTh = row.querySelector('th');
+                                if (firstTh && firstTh.textContent) {
+                                    jobTitles.push(firstTh.textContent.trim());
+                                }
+                            });
+
+                            return { success: true, data: jobTitles };
+                        }
+
+                        await sleep(intervalMs);
+                    }
+
+                    // After retries, still no required elements
+                    const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
+                    if (!h2) {
+                        return { success: false, message: 'Could not find "Hires" section (timed out waiting for page to load)' };
+                    }
+
+                    const table = document.getElementById('currHireTable');
+                    if (!table) {
+                        return { success: false, message: 'Table #currHireTable not found (timed out waiting for page to load)' };
+                    }
+
+                    return { success: false, message: 'Unknown error while reading JobX hires table' };
+                }
+            });
+
+            const result = results[0]?.result;
+            if (result && result.success && Array.isArray(result.data)) {
+                setAvailableJobs(result.data);
+            } else {
+                alert(result?.message || 'Failed to scrape data');
+            }
+        } catch (error) {
+            console.error('Script execution failed:', error);
+            alert('Failed to read from page. Make sure you are on the correct tab.');
+        }
+    };
 
     const handleShiftsParsed = (parsedShifts: Shift[]) => {
         setShifts(prev => [...prev, ...parsedShifts]);
@@ -65,6 +141,8 @@ function Sidepanel() {
                 <ShiftList
                     shifts={shifts}
                     onAddManualShift={() => setStep('manual-entry')}
+                    availableJobs={availableJobs}
+                    onFetchJobs={fetchJobXJobs}
                 />
             )}
         </div>
