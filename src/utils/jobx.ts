@@ -169,3 +169,151 @@ export const returnToTimesheetList = (): { success: boolean; message: string } =
 
     return { success: false, message: 'Already on list or link not found.' };
 };
+
+/**
+ * Fills the timesheet row for a given shift.
+ */
+export const fillShiftRow = (shiftDate: string, startTime: string, endTime: string): { success: boolean; message: string; debug?: string } => {
+    const shiftD = new Date(shiftDate);
+    // Format: MM/DD/YYYY
+    const targetDateStr = `${shiftD.getMonth() + 1}/${shiftD.getDate()}/${shiftD.getFullYear()}`;
+
+    // Find hidden input closest to this date
+    const inputs = Array.from(document.querySelectorAll('input[type="hidden"]'));
+    const targetInput = inputs.find(input =>
+        (input as HTMLInputElement).value &&
+        (input as HTMLInputElement).value.startsWith(targetDateStr) &&
+        (input as HTMLInputElement).id.includes('QuickDate')
+    );
+
+    if (!targetInput) {
+        return { success: false, message: `Could not find row for date ${targetDateStr}` };
+    }
+
+    const idParts = targetInput.id.split('_QuickDate_');
+    if (idParts.length < 2) return { success: false, message: 'Could not parse row ID suffix' };
+    const suffix = idParts[1];
+
+    // Helper to select option
+    const selectOption = (selectId: string, value: string) => {
+        const select = document.getElementById(selectId) as HTMLSelectElement;
+        if (!select) return `Missing ${selectId}`;
+
+        select.value = value;
+        if (select.value !== value) {
+            let found = false;
+            for (let i = 0; i < select.options.length; i++) {
+                // Case insensitive check for value or text
+                if (select.options[i].text.toLowerCase() === value.toLowerCase() ||
+                    select.options[i].value.toLowerCase() === value.toLowerCase()) {
+                    select.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return `Failed to set ${selectId} to ${value}`;
+        }
+        return 'OK';
+    };
+
+    const parseTime = (timeStr: string) => {
+        // Robust parser for: "15:29", "12:30p", "8:03 am", "08:00"
+        let clean = timeStr.toLowerCase().trim();
+        // Keep digits, : and letters a, p, m
+        clean = clean.replace(/[^a-z0-9:]/g, '');
+
+        // Extract H:M
+        const match = clean.match(/(\d{1,2}):(\d{1,2})/);
+        if (!match) return null;
+
+        let h = parseInt(match[1], 10);
+        let m = parseInt(match[2], 10);
+        let period = 'AM'; // Default
+
+        // Edge case: Check for PM indicators: 'p' or 'pm'
+        if (clean.includes('p')) {
+            period = 'PM';
+        } else if (clean.includes('a')) {
+            period = 'AM';
+        } else {
+            // No indicator implies 24h OR ambiguous 12h.
+            // Map 24h to 12h
+            if (h === 0) {
+                h = 12;
+                period = 'AM';
+            } else if (h === 12) {
+                period = 'PM';
+            } else if (h > 12) {
+                h -= 12;
+                period = 'PM';
+            } else {
+                period = 'AM';
+            }
+        }
+
+        return {
+            hour: h.toString(), // "8", "12", "1" (no padding)
+            minute: m.toString().padStart(2, '0'), // "03", "30" (padded)
+            period: period
+        };
+    };
+
+    const start = parseTime(startTime);
+    const end = parseTime(endTime);
+
+    if (!start || !end) {
+        return { success: false, message: `Failed to parse time. Start: ${startTime}, End: ${endTime}` };
+    }
+
+    const debugLog: string[] = [];
+
+    // Set Start Time
+    debugLog.push(`Start Input: ${startTime} -> ${start.hour}:${start.minute} ${start.period}`);
+    debugLog.push(selectOption(`Skin_body_ctl01_StartHour1_${suffix}`, start.hour));
+    debugLog.push(selectOption(`Skin_body_ctl01_StartMinute1_${suffix}`, start.minute));
+    debugLog.push(selectOption(`Skin_body_ctl01_StartAmPm1_${suffix}`, start.period));
+
+    // Set End Time
+    debugLog.push(`End Input: ${endTime} -> ${end.hour}:${end.minute} ${end.period}`);
+    debugLog.push(selectOption(`Skin_body_ctl01_EndHour1_${suffix}`, end.hour));
+    debugLog.push(selectOption(`Skin_body_ctl01_EndMinute1_${suffix}`, end.minute));
+    debugLog.push(selectOption(`Skin_body_ctl01_EndAmPm1_${suffix}`, end.period));
+
+    // Set Pay Code
+    selectOption(`Skin_body_ctl01_PayCodes1_${suffix}`, '1');
+
+    // Click Save
+    const saveBtn = document.getElementById(`Skin_body_ctl01_AddButton_${suffix}`);
+    if (saveBtn) {
+        saveBtn.click();
+        return { success: true, message: `Clicked Save for ${targetDateStr}`, debug: debugLog.join(', ') };
+    }
+
+    return { success: false, message: `Could not find Save button for ${targetDateStr}`, debug: debugLog.join(', ') };
+};
+
+export const checkValidationErrors = (): { hasError: boolean; message?: string } => {
+    // Look for validation summary
+    const summary = document.querySelector('.ValidationSummaryList');
+    if (summary) {
+        const listItems = summary.querySelectorAll('li');
+        const messages = Array.from(listItems).map(li => li.textContent?.trim()).filter(Boolean);
+        if (messages.length > 0) {
+            return { hasError: true, message: messages.join('; ') };
+        }
+    }
+
+    // Also check for inline validators if they are visibl
+    const validators = Array.from(document.querySelectorAll('span[id*="RequiredFieldValidator"]'));
+    const visibleValidators = validators.filter(v => {
+        const style = window.getComputedStyle(v);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+
+    if (visibleValidators.length > 0) {
+        const msg = visibleValidators.map(v => v.textContent?.trim()).join(', ');
+        return { hasError: true, message: msg };
+    }
+
+    return { hasError: false };
+};

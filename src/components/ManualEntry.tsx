@@ -49,7 +49,8 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, presele
             return;
         }
         const newShift: Shift = {
-            date: manualShift.date,
+            // Append T00:00:00 to ensure local time interpretation if parsed by Date
+            date: manualShift.date.includes('T') ? manualShift.date : `${manualShift.date}T00:00:00`,
             startTime: manualShift.startTime,
             endTime: manualShift.endTime,
             totalHours: parseFloat(total.toFixed(2)),
