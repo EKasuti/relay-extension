@@ -26,9 +26,30 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
         const [startH, startM] = manualShift.startTime.split(':').map(Number);
         const [endH, endM] = manualShift.endTime.split(':').map(Number);
 
-        let total = (endH + endM / 60) - (startH + startM / 60);
-        if (total < 0) total += 24; // handles overnight
+        // Basic validation of parsed times
+        if (
+            Number.isNaN(startH) || Number.isNaN(startM) ||
+            Number.isNaN(endH) || Number.isNaN(endM)
+        ) {
+            setStatus('Invalid time format. Please use HH:MM.');
+            return;
+        }
 
+        const startTotal = startH + startM / 60;
+        const endTotal = endH + endM / 60;
+        const isOvernight = endTotal <= startTotal;
+
+        let total = endTotal - startTotal;
+        if (isOvernight) {
+            // Treat overnight shifts as ending on the next day
+            total += 24;
+        }
+
+        // Validate resulting duration to avoid unintended multi-day or zero-length shifts
+        if (total <= 0 || total > 24) {
+            setStatus('Invalid shift duration. Please check start and end times.');
+            return;
+        }
         const newShift: Shift = {
             date: manualShift.date,
             startTime: manualShift.startTime,
