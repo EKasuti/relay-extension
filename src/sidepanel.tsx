@@ -36,22 +36,46 @@ function Sidepanel() {
         try {
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                func: () => {
+                func: async () => {
+                    const maxAttempts = 10;
+                    const intervalMs = 500;
+
+                    const sleep = (ms: number) =>
+                        new Promise<void>(resolve => setTimeout(resolve, ms));
+
+                    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                        const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
+                        const table = document.getElementById('currHireTable');
+
+                        if (h2 && table) {
+                            const jobTitles: string[] = [];
+                            const rows = table.querySelectorAll('tbody tr');
+
+                            rows.forEach(row => {
+                                const firstTh = row.querySelector('th');
+                                if (firstTh && firstTh.textContent) {
+                                    jobTitles.push(firstTh.textContent.trim());
+                                }
+                            });
+
+                            return { success: true, data: jobTitles };
+                        }
+
+                        await sleep(intervalMs);
+                    }
+
+                    // After retries, still no required elements
                     const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
-                    if (!h2) return { success: false, message: 'Could not find "Hires" section' };
+                    if (!h2) {
+                        return { success: false, message: 'Could not find "Hires" section (timed out waiting for page to load)' };
+                    }
 
                     const table = document.getElementById('currHireTable');
-                    if (!table) return { success: false, message: 'Table #currHireTable not found' };
+                    if (!table) {
+                        return { success: false, message: 'Table #currHireTable not found (timed out waiting for page to load)' };
+                    }
 
-                    const jobTitles: string[] = [];
-                    const rows = table.querySelectorAll('tbody tr');
-                    rows.forEach(row => {
-                        const firstTh = row.querySelector('th');
-                        if (firstTh && firstTh.textContent) {
-                            jobTitles.push(firstTh.textContent.trim());
-                        }
-                    });
-                    return { success: true, data: jobTitles };
+                    return { success: false, message: 'Unknown error while reading JobX hires table' };
                 }
             });
 
