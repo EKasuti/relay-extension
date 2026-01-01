@@ -32,7 +32,7 @@ const Upload: React.FC<UploadProps> = ({ onBack, onShiftsParsed }) => {
             setStatus(`Successfully parsed ${parsedShifts.length} shifts.`);
         } catch (error) {
             console.error(error);
-            setStatus('Error parsing PDF. Check console for details.');
+            setStatus('Failed to parse PDF. Please ensure the file is a valid ConnectTeam export.');
         }
     };
 
