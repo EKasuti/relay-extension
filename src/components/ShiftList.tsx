@@ -5,7 +5,7 @@ interface ShiftListProps {
     shifts: Shift[];
 }
 
-const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; availableJobs?: string[]; onFetchJobs?: () => void }> = ({ shifts, onAddManualShift, availableJobs = [], onFetchJobs }) => {
+const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; availableJobs?: string[]; onFetchJobs?: () => void; onAutoFill?: (jobTitle: string, shiftsToFill: Shift[]) => void }> = ({ shifts, onAddManualShift, availableJobs = [], onFetchJobs, onAutoFill }) => {
     const [selectedType, setSelectedType] = useState<string>('All');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [jobMappings, setJobMappings] = useState<Record<string, string>>({});
@@ -76,23 +76,39 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                     <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
                         <h4 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Map Job Titles</h4>
                         <div className="space-y-2">
-                            {uniqueTypes.filter(t => t !== 'Manual Entry').map(type => (
-                                <div key={type} className="flex items-center justify-between gap-2 text-xs">
-                                    <span className="font-medium text-gray-700 truncate max-w-[40%] flex-shrink-0" title={type}>{type}</span>
-                                    <span className="text-gray-400">→</span>
-                                    <select
-                                        value={jobMappings[type] || ''}
-                                        onChange={(e) => handleMappingChange(type, e.target.value)}
-                                        className="bg-white border border-gray-300 text-gray-900 rounded focus:ring-blue-500 focus:border-blue-500 block p-1 outline-none flex-grow max-w-[50%]"
-                                        aria-label={`Map "${type}" to JobX job title`}
-                                    >
-                                        <option value="">Select JobX Job...</option>
-                                        {availableJobs.map(job => (
-                                            <option key={job} value={job}>{job}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            ))}
+                            {uniqueTypes.filter(t => t !== 'Manual Entry').map(type => {
+                                const mappedJob = jobMappings[type];
+                                return (
+                                    <div key={type} className="flex items-center justify-between gap-2 text-xs">
+                                        <span className="font-medium text-gray-700 truncate max-w-[30%] flex-shrink-0" title={type}>{type}</span>
+                                        <span className="text-gray-400">→</span>
+                                        <select
+                                            value={mappedJob || ''}
+                                            onChange={(e) => handleMappingChange(type, e.target.value)}
+                                            className="bg-white border border-gray-300 text-gray-900 rounded focus:ring-blue-500 focus:border-blue-500 block p-1 outline-none flex-grow"
+                                            aria-label={`Map "${type}" to JobX job title`}
+                                        >
+                                            <option value="">Select JobX Job...</option>
+                                            {availableJobs.map(job => (
+                                                <option key={job} value={job}>{job}</option>
+                                            ))}
+                                        </select>
+                                        {onAutoFill && (
+                                            <button
+                                                onClick={() => mappedJob && onAutoFill(mappedJob, shifts.filter(s => s.jobTitle === type))}
+                                                disabled={!mappedJob}
+                                                className={`px-2 py-1 rounded font-medium transition-colors ${mappedJob
+                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                title={mappedJob ? "Auto-fill timesheet for this job" : "Select a job first"}
+                                            >
+                                                AutoFill
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -124,25 +140,18 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                     const shiftKey = `${shift.date}-${shift.startTime}-${shift.endTime}-${shift.jobTitle}`;
                     return (
                         <div key={shiftKey} className="flex flex-col gap-1 p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors">
-                            <div className="flex justify-between items-center text-sm">
-                                <div>
-                                    <div className="font-bold text-gray-800 flex items-center gap-2">
-                                        {shift.date}
-                                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${mappedJob ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                                            {mappedJob || shift.jobTitle}
-                                        </span>
-                                    </div>
-                                    <div className="text-gray-500 mt-1 text-xs">{shift.startTime} - {shift.endTime}</div>
+                            <div>
+                                <div className="font-bold text-gray-800 flex items-center gap-2">
+                                    {shift.date}
+                                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${mappedJob ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                                        {mappedJob || shift.jobTitle}
+                                    </span>
                                 </div>
-                                <div className="font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs">
-                                    {shift.totalHours.toFixed(2)} hrs
-                                </div>
+                                <div className="text-gray-500 mt-1 text-xs">{shift.startTime} - {shift.endTime}</div>
                             </div>
-                            {availableJobs.length > 0 && !mappedJob && (
-                                <div className="text-[10px] text-orange-500 text-right italic">
-                                    * Unmapped
-                                </div>
-                            )}
+                            <div className="font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs">
+                                {shift.totalHours.toFixed(2)} hrs
+                            </div>
                         </div>
                     );
                 })}

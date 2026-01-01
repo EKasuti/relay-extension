@@ -7,25 +7,33 @@ import SourceSelection from './components/SourceSelection'
 import Instructions from './components/Instructions'
 import Upload from './components/Upload'
 import ManualEntry from './components/ManualEntry'
-import ShiftList from './components/ShiftList'
+import JobXWorkflow from './components/JobXWorkflow'
+import { scrapeJobTitles } from './utils/jobx'
 
 function Sidepanel() {
     const [shifts, setShifts] = useState<Shift[]>([]);
 
     // Navigation State
-    const [step, setStep] = useState<'select-source' | 'import-instructions' | 'import-upload' | 'job-matching' | 'manual-entry'>('select-source');
+    const [step, setStep] = useState<
+        'select-source' | 
+        'import-instructions' |
+        'import-upload' |
+        'job-matching' |
+        'manual-entry'
+    >('select-source');
+
+    // Global State for JobX
     const [availableJobs, setAvailableJobs] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const fetchJobXJobs = async () => {
-        setErrorMessage(null); // Clear previous errors
+        setErrorMessage(null);
         if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.scripting) {
             setErrorMessage('Chrome APIs not available');
             return;
         }
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
         if (!tab?.id) return;
 
         // Check URL
@@ -39,35 +47,7 @@ function Sidepanel() {
         try {
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                func: async () => {
-                    const maxAttempts = 10;
-                    const intervalMs = 500;
-
-                    const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
-
-                    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                        const h2 = Array.from(document.querySelectorAll('h2')).find(h => h.textContent?.includes('Hires'));
-                        const table = document.getElementById('currHireTable');
-
-                        if (h2 && table) {
-                            const jobTitles: string[] = [];
-                            const rows = table.querySelectorAll('tbody tr');
-
-                            rows.forEach(row => {
-                                const firstTh = row.querySelector('th');
-                                if (firstTh && firstTh.textContent) {
-                                    jobTitles.push(firstTh.textContent.trim());
-                                }
-                            });
-
-                            return { success: true, data: jobTitles };
-                        }
-
-                        await sleep(intervalMs);
-                    }
-
-                    return { success: false, message: 'Could not find "Hires" table. Please ensure the page is fully loaded.' };
-                }
+                func: scrapeJobTitles
             });
 
             const result = results[0]?.result;
@@ -128,19 +108,23 @@ function Sidepanel() {
                 />
             )}
 
+            {/* Global Manual Entry (Before JobX Workflow) */}
             {step === 'manual-entry' && (
                 <ManualEntry
                     onBack={() => setStep(shifts.length > 0 ? 'job-matching' : 'select-source')}
-                    onShiftAdded={handleShiftAdded}
+                    onShiftAdded={(shift) => {
+                        handleShiftAdded(shift);
+                    }}
                 />
             )}
 
-            {step === 'job-matching' && shifts.length > 0 && (
-                <ShiftList
+            {step === 'job-matching' && (
+                <JobXWorkflow
                     shifts={shifts}
-                    onAddManualShift={() => setStep('manual-entry')}
+                    setShifts={setShifts}
                     availableJobs={availableJobs}
                     onFetchJobs={fetchJobXJobs}
+                    onExit={() => setStep('select-source')}
                 />
             )}
         </div>

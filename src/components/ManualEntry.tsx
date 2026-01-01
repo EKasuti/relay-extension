@@ -4,14 +4,15 @@ import type { Shift } from '../types';
 interface ManualEntryProps {
     onBack: () => void;
     onShiftAdded: (shift: Shift) => void;
+    preselectedJobTitle?: string;
 }
 
-const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
+const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, preselectedJobTitle }) => {
     const [manualShift, setManualShift] = useState({
         date: '',
         startTime: '',
         endTime: '',
-        jobTitle: ''
+        jobTitle: preselectedJobTitle || ''
     });
     const [status, setStatus] = useState<string>('');
 
@@ -22,7 +23,6 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
         }
 
         // Calculate total hours
-        // Simple 24h format assumption for manual entry or input type="time"
         const [startH, startM] = manualShift.startTime.split(':').map(Number);
         const [endH, endM] = manualShift.endTime.split(':').map(Number);
 
@@ -41,11 +41,9 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
 
         let total = endTotal - startTotal;
         if (isOvernight) {
-            // Treat overnight shifts as ending on the next day
             total += 24;
         }
 
-        // Validate resulting duration to avoid unintended multi-day or zero-length shifts
         if (total <= 0 || total > 24) {
             setStatus('Invalid shift duration. Please check start and end times.');
             return;
@@ -60,7 +58,11 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
         };
 
         onShiftAdded(newShift);
-        setManualShift({ date: '', startTime: '', endTime: '', jobTitle: '' });
+        if (!preselectedJobTitle) {
+            setManualShift({ date: '', startTime: '', endTime: '', jobTitle: '' });
+        } else {
+            setManualShift(prev => ({ ...prev, date: '', startTime: '', endTime: '' }));
+        }
         setStatus('Shift added manually.');
     };
 
@@ -77,7 +79,9 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
                         type="text"
                         value={manualShift.jobTitle}
                         onChange={e => setManualShift({ ...manualShift, jobTitle: e.target.value })}
-                        className="border border-gray-300 rounded w-full p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        disabled={!!preselectedJobTitle}
+                        className={`border border-gray-300 rounded w-full p-2 text-sm outline-none transition-all ${preselectedJobTitle ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                            }`}
                         placeholder="e.g. Baker Desk"
                     />
                 </div>
