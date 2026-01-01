@@ -51,7 +51,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded }) => {
             </div>
             <div className="space-y-3">
                 <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Type / Job *</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title *</label>
                     <input
                         type="text"
                         value={manualShift.type}
