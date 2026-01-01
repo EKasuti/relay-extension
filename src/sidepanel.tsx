@@ -28,9 +28,7 @@ function Sidepanel() {
         <div className="flex flex-col items-center p-4 min-h-screen bg-gray-50 font-sans">
             <h1 className="text-xl font-bold mb-4 text-blue-600 tracking-tight">Relay Sidepanel</h1>
             <div className="mb-6">
-                <a target="_blank">
-                    <img src={relayLogo} className="h-12 w-12 hover:scale-110 transition-transform drop-shadow-sm" alt="Relay logo" />
-                </a>
+                <img src={relayLogo} className="h-12 w-12 hover:scale-110 transition-transform drop-shadow-sm" alt="Relay logo" />
             </div>
 
             {step === 'select-source' && (
