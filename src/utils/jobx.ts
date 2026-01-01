@@ -171,6 +171,55 @@ export const returnToTimesheetList = (): { success: boolean; message: string } =
 };
 
 /**
+ * Parses a time string into Hour, Minute, and Period (AM/PM).
+ * Handles formats: "15:29", "12:30p", "8:03 am", "08:00"
+ */
+export const parseTime = (timeStr: string) => {
+    // Robust parser for: "15:29", "12:30p", "8:03 am", "08:00"
+    let clean = timeStr.toLowerCase().trim();
+    // Keep digits, : and letters a, p, m
+    clean = clean.replace(/[^a-z0-9:]/g, '');
+
+    // Extract H:M
+    const match = clean.match(/(\d{1,2}):(\d{1,2})/);
+    if (!match) return null;
+
+    let h = parseInt(match[1], 10);
+    let m = parseInt(match[2], 10);
+
+    if (m < 0 || m > 59) return null;
+
+    let period = 'AM'; // Default
+
+    // Edge case: Check for PM indicators: 'p' or 'pm'
+    if (clean.includes('p')) {
+        period = 'PM';
+    } else if (clean.includes('a')) {
+        period = 'AM';
+    } else {
+        // No indicator implies 24h OR ambiguous 12h.
+        // Map 24h to 12h
+        if (h === 0) {
+            h = 12;
+            period = 'AM';
+        } else if (h === 12) {
+            period = 'PM';
+        } else if (h > 12) {
+            h -= 12;
+            period = 'PM';
+        } else {
+            period = 'AM';
+        }
+    }
+
+    return {
+        hour: h.toString(), // "8", "12", "1" (no padding)
+        minute: m.toString().padStart(2, '0'), // "03", "30" (padded)
+        period: period
+    };
+};
+
+/**
  * Fills the timesheet row for a given shift.
  */
 export const fillShiftRow = (shiftDate: string, startTime: string, endTime: string): { success: boolean; message: string; debug?: string } => {
@@ -216,50 +265,6 @@ export const fillShiftRow = (shiftDate: string, startTime: string, endTime: stri
         return 'OK';
     };
 
-    const parseTime = (timeStr: string) => {
-        // Robust parser for: "15:29", "12:30p", "8:03 am", "08:00"
-        let clean = timeStr.toLowerCase().trim();
-        // Keep digits, : and letters a, p, m
-        clean = clean.replace(/[^a-z0-9:]/g, '');
-
-        // Extract H:M
-        const match = clean.match(/(\d{1,2}):(\d{1,2})/);
-        if (!match) return null;
-
-        let h = parseInt(match[1], 10);
-        let m = parseInt(match[2], 10);
-
-        if (m < 0 || m > 59) return null;
-
-        let period: 'AM' | 'PM';
-
-        // Edge case: Check for PM indicators: 'p' or 'pm'
-        if (clean.includes('p')) {
-            period = 'PM';
-        } else if (clean.includes('a')) {
-            period = 'AM';
-        } else {
-            // No indicator implies 24h OR ambiguous 12h.
-            // Map 24h to 12h
-            if (h === 0) {
-                h = 12;
-                period = 'AM';
-            } else if (h === 12) {
-                period = 'PM';
-            } else if (h > 12) {
-                h -= 12;
-                period = 'PM';
-            } else {
-                period = 'AM';
-            }
-        }
-
-        return {
-            hour: h.toString(), // "8", "12", "1" (no padding)
-            minute: m.toString().padStart(2, '0'), // "03", "30" (padded)
-            period: period
-        };
-    };
 
     const start = parseTime(startTime);
     const end = parseTime(endTime);
