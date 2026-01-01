@@ -150,7 +150,6 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                     onSelect={handleTimesheetSelected}
                     onBack={() => {
                         setStep('job-matching');
-                        onExit();
                     }}
                 />
             )}
