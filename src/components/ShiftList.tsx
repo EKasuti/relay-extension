@@ -31,7 +31,7 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
     };
 
     return (
-        <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 overflow-y-auto min-h-[600px] animate-slideUp">
+        <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 overflow-y-auto min-h-[300px] md:min-h-[600px] animate-slideUp">
             <div className="flex flex-col gap-3 mb-3">
                 <div className="flex justify-between items-center">
                     <h3 className="font-semibold text-gray-700 text-sm">Parsed Shifts ({sortedShifts.length})</h3>
