@@ -83,6 +83,7 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                         value={selectedType}
                         onChange={(e) => setSelectedType(e.target.value)}
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 outline-none flex-grow"
+                        aria-label="Filter shifts by job type"
                     >
                         {uniqueFilterTypes.map(type => (
                             <option key={type} value={type}>{type}</option>
