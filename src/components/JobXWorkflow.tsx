@@ -10,7 +10,8 @@ import {
     startTimesheet,
     returnToTimesheetList,
     fillShiftRow,
-    checkValidationErrors
+    checkValidationErrors,
+    parseTime
 } from '../utils/jobx';
 
 interface JobXWorkflowProps {
@@ -52,9 +53,9 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                 world: world
             });
             return results[0] as { result: T };
-        } catch (e) {
+        } catch (e: any) {
             console.error('Script execution error:', e);
-            setErrorMessage('Script execution failed.');
+            setErrorMessage(e.message || 'Script execution failed.');
             return null;
         }
     };
@@ -166,7 +167,16 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
             // Skip already filled shifts if needed, but user might want to retry error ones.
             if (shift.fillStatus === 'success') continue;
 
-            const result = await execute(fillShiftRow, [shift.date, shift.startTime, shift.endTime], 'MAIN');
+            // Parse times before passing to script
+            const startObj = parseTime(shift.startTime);
+            const endObj = parseTime(shift.endTime);
+            if (!startObj || !endObj) {
+                currentShifts = updateShiftStatus(currentShifts, shift, 'error', `Invalid time format: ${shift.startTime} - ${shift.endTime}`);
+                setShifts(currentShifts);
+                continue;
+            }
+
+            const result = await execute(fillShiftRow, [shift.date, startObj, endObj], 'MAIN');
 
             if (result?.result && !result.result.success) {
                 // Update shift with error
