@@ -1,5 +1,7 @@
 import relayLogo from '/logo.png'
 import LandingPage from './components/LandingPage'
+import PrivacyPolicy from './components/PrivacyPolicy'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
   const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
@@ -34,7 +36,14 @@ function App() {
     );
   }
 
-  return <LandingPage />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App
