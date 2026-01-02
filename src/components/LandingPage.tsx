@@ -112,7 +112,14 @@ const LandingPage = () => {
                 <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-slate-400 text-sm">
                     <p>&copy; {new Date().getFullYear()} Relay. All rights reserved.</p>
                     <div className="flex gap-8 mt-4 md:mt-0 font-medium">
-                        <a href="https://github.com/EKasuti/relay-extension/blob/development/PRIVACY_POLICY.md" className="hover:text-[#16467C] transition-colors">Privacy Policy</a>
+                        <a
+                            href="https://github.com/EKasuti/relay-extension/blob/development/PRIVACY_POLICY.md"
+                            className="hover:text-[#16467C] transition-colors"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Privacy Policy
+                        </a>
                         <a href="mailto:emmanuel.k.makau.jr.26@dartmouth.edu" className="hover:text-[#16467C] transition-colors">Contact Support</a>
                     </div>
                 </div>
