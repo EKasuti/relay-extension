@@ -45,12 +45,21 @@ const LandingPage = () => {
                         </p>
 
                         <div className="flex flex-col items-center justify-center gap-6">
-                            <button disabled className="group relative px-8 py-4 bg-[#16467C] text-white rounded-full font-bold text-lg cursor-not-allowed opacity-90 shadow-2xl shadow-[#16467C]/30 transition-all hover:scale-[1.02] hover:shadow-[#16467C]/40 active:scale-[0.98] flex items-center gap-3 overflow-hidden">
+                            <button
+                                disabled
+                                aria-describedby="add-to-chrome-status"
+                                className="group relative px-8 py-4 bg-[#16467C] text-white rounded-full font-bold text-lg cursor-not-allowed opacity-90 shadow-2xl shadow-[#16467C]/30 transition-all hover:scale-[1.02] hover:shadow-[#16467C]/40 active:scale-[0.98] flex items-center gap-3 overflow-hidden"
+                            >
                                 <div className="absolute inset-0 bg-white/10 group-hover:translate-x-full transition-transform duration-500 -skew-x-12 -translate-x-full"></div>
                                 <Puzzle className="w-5 h-5" />
                                 <span>Add to Chrome</span>
                             </button>
-                            <span className="text-sm text-slate-400 font-medium tracking-wide">Coming soon to the Chrome Web Store</span>
+                            <span
+                                id="add-to-chrome-status"
+                                className="text-sm text-slate-400 font-medium tracking-wide"
+                            >
+                                Coming soon to the Chrome Web Store
+                            </span>
                         </div>
                     </div>
                 </section>
