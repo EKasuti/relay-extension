@@ -1,4 +1,4 @@
-import relayLogo from '/relay.svg'
+import relayLogo from '/logo.png'
 
 function App() {
   const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;

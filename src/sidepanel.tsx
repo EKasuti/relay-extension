@@ -1,7 +1,7 @@
 import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import relayLogo from '/relay.svg'
+import relayLogo from '/logo.png'
 import type { Shift } from './types'
 import SourceSelection from './components/SourceSelection'
 import Instructions from './components/Instructions'
