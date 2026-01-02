@@ -10,7 +10,7 @@ const LandingPage = () => {
             <header className="w-full border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <img src={relayLogo} alt="Relay Logo" className="h-9 w-9 drop-shadow-sm rounded-lg" />
+                        <img src={relayLogo} alt="Relay logo" className="h-9 w-9 drop-shadow-sm rounded-lg" />
                         <span className="font-bold text-xl tracking-tight text-slate-900">Relay</span>
                     </div>
                 </div>
