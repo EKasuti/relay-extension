@@ -110,8 +110,15 @@ function Sidepanel() {
             )}
 
             {step === 'import-whentowork' && (
-                <Upload
+                <Instructions
                     onBack={() => setStep('select-source')}
+                    onNext={() => setStep('import-whentowork-upload')}
+                />
+            )}
+
+            {step === 'import-whentowork-upload' && (
+                <Upload
+                    onBack={() => setStep('import-whentowork')}
                     onShiftsParsed={handleShiftsParsed}
                 />
             )}
