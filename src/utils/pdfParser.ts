@@ -55,7 +55,7 @@ interface DateAnchor {
     y: number;
 }
 
-interface ParsedShiftRaw {
+interface UnmatchedShift {
     startTime: string;
     endTime: string;
     totalHours: number;
@@ -155,27 +155,32 @@ function groupItemsByColumn(items: TextItem[], headers: TextItem[]): Record<stri
 
     const nonHeaderItems = items.filter(i => !REGEX.DATE_HEADER_WTW.test(i.str.trim()));
 
+    // Optimization: Calculate column X-midpoints for O(1) assignment
+    const boundaries: { header: TextItem, maxX: number }[] = [];
+    for (let i = 0; i < headers.length; i++) {
+        const current = headers[i];
+        const next = headers[i + 1];
+
+        let maxX = Infinity;
+        if (next) {
+            // Midpoint between this header and next
+            maxX = (current.transform[CONFIG.IDX_X] + next.transform[CONFIG.IDX_X]) / 2;
+        }
+        boundaries.push({ header: current, maxX });
+    }
+
+    // Single pass through items (O(N))
     for (const item of nonHeaderItems) {
         const itemX = item.transform[CONFIG.IDX_X];
         const itemY = item.transform[CONFIG.IDX_Y];
 
-        let closestHeader: TextItem | null = null;
-        let minDiff = Infinity;
-
-        // Find geometrically closest header (X-axis)
-        for (const header of headers) {
-            const diff = Math.abs(header.transform[CONFIG.IDX_X] - itemX);
-            // Must be reasonably close (e.g. < 100px) and BELOW the header.
-            // In the PDF.js viewport coordinates, Y increases *downwards*,
-            // so a larger Y value means the item is visually below the header.
-            if (diff < minDiff && diff < 100 && itemY > header.transform[CONFIG.IDX_Y]) {
-                minDiff = diff;
-                closestHeader = header;
+        // Find which column it falls into
+        const match = boundaries.find(b => itemX < b.maxX);
+        if (match) {
+            // Only add if visually below the header line
+            if (itemY < match.header.transform[CONFIG.IDX_Y]) {
+                groups[match.header.str].push(item);
             }
-        }
-
-        if (closestHeader) {
-            groups[closestHeader.str].push(item);
         }
     }
 
@@ -203,7 +208,8 @@ function parseWTWColumnShifts(items: TextItem[], dateHeader: string, year: numbe
 
     if (!fullDate) return [];
 
-    for (let i = 0; i < sortedItems.length; i++) {
+    let i = 0;
+    while (i < sortedItems.length) {
         const item = sortedItems[i];
         const text = item.str;
 
@@ -223,6 +229,7 @@ function parseWTWColumnShifts(items: TextItem[], dateHeader: string, year: numbe
                 jobTitle: currentJobTitle.trim(),
                 isMigrated: false
             });
+            i++; // Move to next item
         }
         else if (singleStartMatch) {
             // Case B: "10am -" (Split Line)
@@ -243,15 +250,18 @@ function parseWTWColumnShifts(items: TextItem[], dateHeader: string, year: numbe
                         jobTitle: currentJobTitle.trim(),
                         isMigrated: false
                     });
-                    i++; // Consume next item
+                    i += 2; // Consume both items
+                    continue; // Skip the increment at end of loop since we handled it
                 }
             }
+            i++;
         }
         else {
             // Not a time -> assume it's a Job Title
             if (text.trim().length > 1 && !text.includes(CONFIG.WTW_SIGNATURE)) {
                 currentJobTitle = text;
             }
+            i++;
         }
     }
 
@@ -277,7 +287,7 @@ async function parseConnectTeamPdf(pdf: any): Promise<Shift[]> {
         const lines = HelperUtils.groupItemsByLine(items);
 
         const dateAnchors: DateAnchor[] = [];
-        const shiftLines: ParsedShiftRaw[] = [];
+        const shiftLines: UnmatchedShift[] = [];
 
         for (const line of lines) {
             const fullLine = line.items.map(i => i.str).join(' ');
@@ -426,7 +436,7 @@ const HelperUtils = {
         return null;
     },
 
-    parseConnectTeamShiftLine(fullLine: string, y: number): ParsedShiftRaw | null {
+    parseConnectTeamShiftLine(fullLine: string, y: number): UnmatchedShift | null {
         // Look for two times
         const timeMatches = [...fullLine.matchAll(/(\d{1,2}:\d{2}\s?(?:am|pm))/gi)];
         if (timeMatches.length < 2) return null;
