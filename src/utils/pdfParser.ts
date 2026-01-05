@@ -365,7 +365,7 @@ const TimeUtils = {
                 console.warn(`Invalid hour component in time string "${t}"`);
                 return NaN;
             }
-            if (Number.isNaN(m)) m = 0; // Handle "10am" -> 10:00
+            if (m === undefined || Number.isNaN(m)) m = 0; // Handle "10am" -> 10:00
 
             const periodLower = period.toLowerCase();
             if (periodLower === 'pm' && h < 12) h += 12;
