@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-01-05
+
+### Fixed
+- **WhenToWork Parsing**: Fixed issue where time ranges combined in a single line (e.g., "10am - 12pm") were ignored.
+- **NaN Hours**: Fixed regression where times without minutes (e.g., "10am") resulted in `NaN` total hours.
+- **Complexity Optimization**: Optimized column grouping logic from O(M*N) to O(N) for faster parsing of large PDFs.
+
+### Removed
+- **Analytics**: Removed Google Analytics integration to ensure strict compliance with Extension CSP policies.
+
 ## [1.1.0] - 2026-01-05
 
 ### Added
