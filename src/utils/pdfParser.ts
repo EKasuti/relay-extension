@@ -329,6 +329,11 @@ async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
                             'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
                         };
                         const monNum = months[mon];
+                        if (!monNum) {
+                            console.warn(`Unrecognized month abbreviation "${mon}" in date string "${dateStr}". Skipping shift.`);
+                            i++;
+                            continue;
+                        }
                         const dayNum = day.padStart(2, '0');
                         const fullDate = `${year}-${monNum}-${dayNum}`;
 
