@@ -4,7 +4,7 @@ Relay Extension is a Chrome extension designed to help manage shifts, parse PDF 
 
 ## Features
 
-- **PDF Import**: Extract shift data directly from ConnectTeam export PDFs.
+- **PDF Import**: Extract shift data directly from ConnectTeam & WhenToWork export PDFs.
 - **JobX Integration**: Sync active job titles directly from your Dartmouth JobX dashboard.
 - **Smart Mapping**: Automatically map your imported shifts to official JobX job titles with a global mapping tool.
 
@@ -53,6 +53,44 @@ This will run the setup guide at `http://localhost:5173`. You can use this to ve
 3. **Run**
    - Pin the extension to your toolbar.
    - Click the icon to open the side panel and start managing your shifts.
+
+## Release Workflow
+
+We use a strict automated release process to ensure version consistency.
+
+### Creating a New Release
+
+To release a new version (e.g., bumping from `1.0.0` to `1.1.0`):
+
+```bash
+npm run release <major|minor|patch|version>
+# Example: npm run release 1.1.0
+```
+
+This script will automatically:
+1. Update `package.json` version.
+2. Update `manifest.json` version.
+3. Update `CHANGELOG.md` with a template.
+4. Create a git commit and tag (e.g., `v1.1.0`).
+
+### Managing Versions
+
+Developers can check out specific versions using git tags.
+
+**Fetch all tags:**
+```bash
+git fetch --tags
+```
+
+**List available versions:**
+```bash
+git tag
+```
+
+**Checkout a specific version:**
+```bash
+git checkout v1.0.0
+```
 
 ## Tech Stack
 
