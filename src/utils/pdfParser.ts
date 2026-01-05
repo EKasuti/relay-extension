@@ -293,8 +293,8 @@ async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
             while (i < sortedItems.length) {
                 const text = sortedItems[i].str;
 
-                // Identify Start Time
-                const startMatch = text.match(/(\d{1,2}:\d{2}(?:am|pm))\s?-/i);
+                // Identify Start Time (dash after time is optional to handle both "7:30am -" and "7:30am")
+                const startMatch = text.match(/(\d{1,2}:\d{2}(?:am|pm))(?:\s*-\s*)?/i);
                 if (startMatch) {
                     const startTime = startMatch[1];
                     let endTime: string | null = null;
