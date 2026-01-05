@@ -27,6 +27,7 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
     setShifts,
     availableJobs,
     onFetchJobs,
+    onExit
 }) => {
     // Internal State
     const [step, setStep] = useState<'job-matching' | 'timesheet-selection' | 'timesheet-detail' | 'manual-entry'>('job-matching');
@@ -241,6 +242,7 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                     availableJobs={availableJobs}
                     onFetchJobs={onFetchJobs}
                     onAutoFill={handleAutoFill}
+                    onImportMore={onExit}
                 />
             )}
 

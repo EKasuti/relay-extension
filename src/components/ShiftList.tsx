@@ -5,7 +5,7 @@ interface ShiftListProps {
     shifts: Shift[];
 }
 
-const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; availableJobs?: string[]; onFetchJobs?: () => void; onAutoFill?: (jobTitle: string) => void }> = ({ shifts, onAddManualShift, availableJobs = [], onFetchJobs, onAutoFill }) => {
+const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; availableJobs?: string[]; onFetchJobs?: () => void; onAutoFill?: (jobTitle: string) => void; onImportMore?: () => void }> = ({ shifts, onAddManualShift, availableJobs = [], onFetchJobs, onAutoFill, onImportMore }) => {
     const [selectedType, setSelectedType] = useState<string>('All');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [jobMappings, setJobMappings] = useState<Record<string, string>>({});
@@ -64,6 +64,13 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                             </button>
                         )}
                         <button
+                            onClick={onImportMore}
+                            className="text-xs bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded hover:bg-gray-200 font-medium transition-colors"
+                            title="Import more shifts from another source"
+                        >
+                            + Import
+                        </button>
+                        <button
                             onClick={onAddManualShift}
                             className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium transition-colors"
                         >
@@ -79,33 +86,37 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                             {uniqueTypes.filter(t => t !== 'Manual Entry').map(type => {
                                 const mappedJob = jobMappings[type];
                                 return (
-                                    <div key={type} className="flex items-center justify-between gap-2 text-xs">
-                                        <span className="font-medium text-gray-700 truncate max-w-[30%] flex-shrink-0" title={type}>{type}</span>
-                                        <span className="text-gray-400">→</span>
-                                        <select
-                                            value={mappedJob || ''}
-                                            onChange={(e) => handleMappingChange(type, e.target.value)}
-                                            className="bg-white border border-gray-300 text-gray-900 rounded focus:ring-blue-500 focus:border-blue-500 block p-1 outline-none flex-grow"
-                                            aria-label={`Map "${type}" to JobX job title`}
-                                        >
-                                            <option value="">Select JobX Job...</option>
-                                            {availableJobs.map(job => (
-                                                <option key={job} value={job}>{job}</option>
-                                            ))}
-                                        </select>
-                                        {onAutoFill && (
-                                            <button
-                                                onClick={() => mappedJob && onAutoFill(mappedJob)}
-                                                disabled={!mappedJob}
-                                                className={`px-2 py-1 rounded font-medium transition-colors ${mappedJob
-                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                                    }`}
-                                                title={mappedJob ? "Auto-fill timesheet for this job" : "Select a job first"}
+                                    <div key={type} className="flex flex-col p-2 bg-white rounded border border-gray-100 shadow-sm text-xs">
+                                        <div className="flex items-center gap-1 mb-1.5">
+                                            <span className="font-bold text-gray-700 truncate" title={type}>{type}</span>
+                                            <span className="text-gray-400 text-[10px]">mapped to:</span>
+                                        </div>
+                                        <div className="flex gap-2 items-center w-full">
+                                            <select
+                                                value={mappedJob || ''}
+                                                onChange={(e) => handleMappingChange(type, e.target.value)}
+                                                className="bg-white border border-gray-300 text-gray-900 rounded focus:ring-blue-500 focus:border-blue-500 block p-1.5 outline-none flex-grow w-0"
+                                                aria-label={`Map "${type}" to JobX job title`}
                                             >
-                                                AutoFill
-                                            </button>
-                                        )}
+                                                <option value="">Select JobX Job...</option>
+                                                {availableJobs.map(job => (
+                                                    <option key={job} value={job}>{job}</option>
+                                                ))}
+                                            </select>
+                                            {onAutoFill && (
+                                                <button
+                                                    onClick={() => mappedJob && onAutoFill(mappedJob)}
+                                                    disabled={!mappedJob}
+                                                    className={`px-3 py-1.5 rounded font-bold text-xs transition-colors shadow-sm flex-shrink-0 ${mappedJob
+                                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                    title={mappedJob ? "Auto-fill timesheet for this job" : "Select a job first"}
+                                                >
+                                                    AutoFill
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}

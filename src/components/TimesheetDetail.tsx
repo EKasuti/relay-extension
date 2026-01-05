@@ -45,7 +45,7 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
     };
 
     return (
-        <div className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md">
+        <div className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md mx-auto">
             <div className="mb-6 border-b pb-4">
                 <button
                     onClick={onBack}
