@@ -365,7 +365,8 @@ async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
 
 function calculateHours(start: string, end: string): number {
     const parse = (t: string) => {
-        const [time, period] = t.split(/(?=[ap]m)/i);
+        const normalized = t.trim().replace(/\s+/g, '');
+        const [time, period] = normalized.split(/(?=[ap]m)/i);
         let [h, m] = time.split(':').map(Number);
         if (period.toLowerCase() === 'pm' && h < 12) h += 12;
         if (period.toLowerCase() === 'am' && h === 12) h = 0;
