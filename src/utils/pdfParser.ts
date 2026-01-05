@@ -129,6 +129,16 @@ function extractYearFromWTW(items: TextItem[]): number {
     return match ? parseInt(match[1], 10) : new Date().getFullYear();
 }
 
+/**
+ * Groups non-header text items into columns based on their proximity to header items.
+ *
+ * Each non-header item is assigned to the closest header on the X-axis that is above it
+ * on the page, producing a mapping from header text to the items in that column.
+ *
+ * @param items - All text items extracted from the page, including headers and non-headers.
+ * @param headers - Text items that act as column headers (e.g., date labels).
+ * @returns A mapping from each header's text to the list of text items belonging to that column.
+ */
 function groupItemsByColumn(items: TextItem[], headers: TextItem[]): Record<string, TextItem[]> {
     const groups: Record<string, TextItem[]> = {};
     headers.forEach(h => groups[h.str] = []);
