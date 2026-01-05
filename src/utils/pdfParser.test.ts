@@ -228,4 +228,50 @@ describe('pdfParser', () => {
         // 10pm to 2am is 4 hours
         expect(shifts[0].totalHours).toBe(4.0);
     });
+    it('handles missing end time gracefully', async () => {
+        // Edge case: Start time exists but no End time follows in the column
+        const page1Items = [
+            item('WhenToWork.com', 10, 800),
+            item('Week Of Jan 01, 2026', 10, 750),
+            item('Jan-01', 100, 700),
+
+            item('Job Missing End', 100, 600),
+            item('5:00pm -', 100, 590)
+            // Missing end time item here
+        ];
+
+        (pdfjsLib.getDocument as any).mockReturnValue(createMockPdf([page1Items]));
+        const file = new File([''], 'missing-end.pdf');
+        const shifts = await parseShiftsFromPdf(file as any);
+
+        // Should return empty list or valid shifts only, not crash
+        expect(shifts).toHaveLength(0);
+    });
+
+    it('correctly identifies job title for stacked shifts', async () => {
+        // Edge case: Two shifts under one job title, checking if second shift 
+        // incorrectly grabs first shift's time as its job title
+        const page1Items = [
+            item('WhenToWork.com', 10, 800),
+            item('Week Of Jan 01, 2026', 10, 750),
+            item('Jan-01', 100, 700),
+
+            item('Stacked Job', 100, 600),
+            item('9:00am -', 100, 590),
+            item('12:00pm', 100, 580),
+
+            // Second shift immediately follows
+            // Parser might see "12:00pm" as the "prevText" for "1:00pm -"
+            item('1:00pm -', 100, 570),
+            item('5:00pm', 100, 560)
+        ];
+
+        (pdfjsLib.getDocument as any).mockReturnValue(createMockPdf([page1Items]));
+        const file = new File([''], 'stacked.pdf');
+        const shifts = await parseShiftsFromPdf(file as any);
+
+        expect(shifts).toHaveLength(2);
+        expect(shifts[0].jobTitle).toBe('Stacked Job');
+        expect(shifts[1].jobTitle).toBe('Stacked Job'); // Should NOT be "12:00pm"
+    });
 });

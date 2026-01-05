@@ -288,75 +288,67 @@ async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
             // 2. Start Time line - e.g. "7:30am -"
             // 3. End Time line - e.g. "9:30am"
 
-            // We can iterate and consume
-            let i = 0;
-            while (i < sortedItems.length) {
-                const text = sortedItems[i].str;
+            // State Machine for parsing
+            let currentJobTitle = "Unknown";
+            const timeRegex = /(\d{1,2}:\d{2}(?:am|pm))(?:\s*-\s*)?/i; // Updated regex to match optional dash
 
-                // Identify Start Time (dash after time is optional to handle both "7:30am -" and "7:30am")
-                const startMatch = text.match(/(\d{1,2}:\d{2}(?:am|pm))(?:\s*-\s*)?/i);
+            for (let i = 0; i < sortedItems.length; i++) {
+                const item = sortedItems[i];
+                const text = item.str;
+
+                // Check if this item is a Start Time
+                const startMatch = text.match(timeRegex);
+
                 if (startMatch) {
+                    // It's a time! Try to form a shift
                     const startTime = startMatch[1];
-                    let endTime: string | null = null;
-                    let jobTitle = "Unknown";
 
                     // Look ahead for End Time
                     if (i + 1 < sortedItems.length) {
-                        const nextText = sortedItems[i + 1].str;
-                        const endMatch = nextText.match(/(\d{1,2}:\d{2}(?:am|pm))/i);
+                        const nextItem = sortedItems[i + 1];
+                        const endMatch = nextItem.str.match(timeRegex);
+
                         if (endMatch) {
-                            endTime = endMatch[1];
-                        }
-                    }
+                            const endTime = endMatch[1];
 
-                    // Look behind for Job Title (if it exists)
-                    if (i > 0) {
-                        const prevText = sortedItems[i - 1].str;
-                        // Avoid noise or other shifts
-                        // Check if previous looks like a time
-                        if (!prevText.match(/\d{1,2}:\d{2}/) && !prevText.includes('-')) {
-                            jobTitle = prevText;
-                        }
-                    }
+                            // We have a full shift: Job Title + Start + End
 
-                    if (endTime) {
-                        // Parse Date
-                        // dateStr is like "Dec-14"
-                        const [mon, day] = dateStr.split('-');
-                        // Need to convert Month str to number
-                        const months: { [k: string]: string } = {
-                            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
-                            'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
-                        };
-                        const monNum = months[mon];
-                        if (!monNum) {
-                            console.warn(`Unrecognized month abbreviation "${mon}" in date string "${dateStr}". Skipping shift.`);
+                            // Parse Date
+                            const [mon, day] = dateStr.split('-');
+                            const months: { [k: string]: string } = {
+                                'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
+                                'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                            };
+                            const monNum = months[mon];
+                            if (!monNum) {
+                                console.warn(`Unrecognized month abbreviation "${mon}". Skipping shift.`);
+                                // Skip the end time item too
+                                i++;
+                                continue;
+                            }
+
+                            const dayNum = day.padStart(2, '0');
+                            const fullDate = `${year}-${monNum}-${dayNum}`;
+                            const duration = calculateHours(startTime, endTime);
+
+                            shifts.push({
+                                date: fullDate,
+                                startTime,
+                                endTime,
+                                totalHours: duration,
+                                jobTitle: currentJobTitle.trim(),
+                                isMigrated: false
+                            });
+
+                            // Optimization: Skip the next item since we consumed it as End Time
                             i++;
-                            continue;
                         }
-                        const dayNum = day.padStart(2, '0');
-                        const fullDate = `${year}-${monNum}-${dayNum}`;
-
-                        // Calculate Hours
-                        // Simple diff
-                        // Helper needed
-                        const duration = calculateHours(startTime, endTime);
-
-                        shifts.push({
-                            date: fullDate,
-                            startTime,
-                            endTime,
-                            totalHours: duration,
-                            jobTitle: jobTitle.trim(),
-                            isMigrated: false
-                        });
-
-                        // Advance index past end time
-                        i += 2;
-                        continue;
+                    }
+                } else {
+                    if (text.trim().length > 1 && !text.includes('WhenToWork')) {
+                        currentJobTitle = text;
                     }
                 }
-                i++;
             }
         }
     }
