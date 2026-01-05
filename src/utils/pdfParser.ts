@@ -343,16 +343,32 @@ const TimeUtils = {
         const parse = (t: string) => {
             const normalized = t.trim().replace(/\s+/g, '');
             const [time, period] = normalized.split(/(?=[ap]m)/i);
-            let [h, m] = time.split(':').map(Number);
-            if (isNaN(m)) m = 0; // Handle "10am" -> 10:00
 
-            if (period.toLowerCase() === 'pm' && h < 12) h += 12;
-            if (period.toLowerCase() === 'am' && h === 12) h = 0;
+            // Validate that both time and period exist
+            if (!time || !period) {
+                console.warn(`Invalid time string "${t}" (expected format like "10am" or "10:30pm")`);
+                return NaN;
+            }
+
+            let [h, m] = time.split(':').map(Number);
+            if (Number.isNaN(h)) {
+                console.warn(`Invalid hour component in time string "${t}"`);
+                return NaN;
+            }
+            if (Number.isNaN(m)) m = 0; // Handle "10am" -> 10:00
+
+            const periodLower = period.toLowerCase();
+            if (periodLower === 'pm' && h < 12) h += 12;
+            if (periodLower === 'am' && h === 12) h = 0;
             return h + m / 60;
         };
 
         const s = parse(start);
         const e = parse(end);
+        if (Number.isNaN(s) || Number.isNaN(e)) {
+            // Propagate invalid input as NaN duration instead of throwing
+            return NaN;
+        }
         let diff = e - s;
         if (diff < 0) diff += 24; // Overnight shift
         return parseFloat(diff.toFixed(2));
