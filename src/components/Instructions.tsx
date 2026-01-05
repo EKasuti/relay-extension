@@ -16,10 +16,8 @@ const Instructions: React.FC<InstructionsProps> = ({ onBack, onNext, source = 'c
                 {source === 'whentowork' ? (
                     <>
                         <p>1. Log in to your <strong>WhenToWork</strong> account.</p>
-                        <p>2. Go to <strong>Reports</strong> or <strong>Scheduler</strong> in your manager account.</p>
-                        <p>3. Select the <strong>Date Range</strong> for your shifts.</p>
-                        <p>4. Choose data: <strong>Employee</strong>, <strong>Time</strong>, <strong>Position</strong>.</p>
-                        <p>5. Click <strong>Export</strong> to download the file.</p>
+                        <p>2. Navigate to <strong>My Schedule</strong>.</p>
+                        <p>3. Click the <strong>Print</strong> icon and save as PDF.</p>
                     </>
                 ) : (
                     <>

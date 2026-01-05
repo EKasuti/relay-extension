@@ -274,4 +274,48 @@ describe('pdfParser', () => {
         expect(shifts[0].jobTitle).toBe('Stacked Job');
         expect(shifts[1].jobTitle).toBe('Stacked Job'); // Should NOT be "12:00pm"
     });
+
+    it('handles on-the-hour times correctly (e.g. 10am)', async () => {
+        const page1Items = [
+            item('WhenToWork.com', 10, 800),
+            item('Week Of Jan 01, 2026', 10, 750),
+            item('Jan-01', 100, 700),
+            item('Simple Job', 100, 600),
+            item('10am -', 100, 590),
+            item('12pm', 100, 580)
+        ];
+
+        (pdfjsLib.getDocument as any).mockReturnValue(createMockPdf([page1Items]));
+        const file = new File([''], 'simple-times.pdf');
+        const shifts = await parseShiftsFromPdf(file as any);
+
+        expect(shifts).toHaveLength(1);
+        expect(shifts[0]).toMatchObject({
+            startTime: '10am',
+            endTime: '12pm',
+            totalHours: 2.0
+        });
+    });
+
+    it('handles time ranges in a single string (e.g. "10am - 12pm")', async () => {
+        const page1Items = [
+            item('WhenToWork.com', 10, 800),
+            item('Week Of Jan 01, 2026', 10, 750),
+            item('Jan-01', 100, 700),
+            item('Ramekin', 100, 600),
+            item('10am - 12pm', 100, 590) // Single item containing both times
+        ];
+
+        (pdfjsLib.getDocument as any).mockReturnValue(createMockPdf([page1Items]));
+        const file = new File([''], 'combined-times.pdf');
+        const shifts = await parseShiftsFromPdf(file as any);
+
+        expect(shifts).toHaveLength(1);
+        expect(shifts[0]).toMatchObject({
+            startTime: '10am',
+            endTime: '12pm',
+            totalHours: 2.0,
+            jobTitle: 'Ramekin'
+        });
+    });
 });
