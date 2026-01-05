@@ -15,8 +15,9 @@ function Sidepanel() {
 
     // Navigation State
     const [step, setStep] = useState<
-        'select-source' | 
+        'select-source' |
         'import-instructions' |
+        'import-whentowork' |
         'import-upload' |
         'job-matching' |
         'manual-entry'
@@ -104,6 +105,20 @@ function Sidepanel() {
             {step === 'import-upload' && (
                 <Upload
                     onBack={() => setStep('import-instructions')}
+                    onShiftsParsed={handleShiftsParsed}
+                />
+            )}
+
+            {step === 'import-whentowork' && (
+                <Instructions
+                    onBack={() => setStep('select-source')}
+                    onNext={() => setStep('import-whentowork-upload')}
+                />
+            )}
+
+            {step === 'import-whentowork-upload' && (
+                <Upload
+                    onBack={() => setStep('import-whentowork')}
                     onShiftsParsed={handleShiftsParsed}
                 />
             )}

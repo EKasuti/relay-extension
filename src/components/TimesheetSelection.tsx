@@ -20,7 +20,7 @@ const TimesheetSelection: React.FC<TimesheetSelectionProps> = ({ timesheets, shi
     };
 
     return (
-        <div className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md">
+        <div className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md mx-auto">
             <h2 className="text-xl font-bold mb-4 text-center text-gray-800">Select Pay Period</h2>
             <p className="text-sm text-gray-600 mb-4 text-center">
                 Choose the pay period to fill. Shifts outside this range will be skipped for now.
