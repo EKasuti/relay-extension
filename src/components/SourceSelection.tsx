@@ -11,7 +11,7 @@ const SourceSelection: React.FC<SourceSelectionProps> = ({ onSelectType, onConti
     return (
         <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 mb-4 transition-all">
             <h2 className="text-lg font-semibold mb-3 text-gray-800">Add Shifts From</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3">
                 <button
                     onClick={() => onSelectType('import-instructions')}
                     className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"
