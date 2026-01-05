@@ -145,8 +145,10 @@ function groupItemsByColumn(items: TextItem[], headers: TextItem[]): Record<stri
         // Find geometrically closest header (X-axis)
         for (const header of headers) {
             const diff = Math.abs(header.transform[CONFIG.IDX_X] - itemX);
-            // Must be reasonably close (e.g. < 100px) and BELOW the header
-            if (diff < minDiff && diff < 100 && itemY < header.transform[CONFIG.IDX_Y]) {
+            // Must be reasonably close (e.g. < 100px) and BELOW the header.
+            // In the PDF.js viewport coordinates, Y increases *downwards*,
+            // so a larger Y value means the item is visually below the header.
+            if (diff < minDiff && diff < 100 && itemY > header.transform[CONFIG.IDX_Y]) {
                 minDiff = diff;
                 closestHeader = header;
             }
