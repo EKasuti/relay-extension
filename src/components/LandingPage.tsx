@@ -24,12 +24,12 @@ const LandingPage = () => {
                     <div className="max-w-4xl mx-auto text-center">
 
                         {/* Status Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-[#E4930A] text-xs font-bold uppercase tracking-wider mb-10 shadow-sm border border-[#E4930A]/30">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-green-600 text-xs font-bold uppercase tracking-wider mb-10 shadow-sm border border-green-600/30">
                             <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E4930A] opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#E4930A]"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                             </span>
-                            In Review
+                            Available v1.0.0
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.15]">
@@ -46,20 +46,18 @@ const LandingPage = () => {
                         </p>
 
                         <div className="flex flex-col items-center justify-center gap-6">
-                            <button
-                                disabled
-                                aria-describedby="add-to-chrome-status"
-                                className="group relative px-8 py-4 bg-[#16467C] text-white rounded-full font-bold text-lg cursor-not-allowed opacity-90 shadow-2xl shadow-[#16467C]/30 transition-all hover:scale-[1.02] hover:shadow-[#16467C]/40 active:scale-[0.98] flex items-center gap-3 overflow-hidden"
+                            <a
+                                href="https://chromewebstore.google.com/detail/relay/ibahhfefmnkencndapdphhgbebddhbbe"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative px-8 py-4 bg-[#16467C] text-white rounded-full font-bold text-lg shadow-2xl shadow-[#16467C]/30 transition-all hover:scale-[1.02] hover:shadow-[#16467C]/40 active:scale-[0.98] flex items-center gap-3 overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-white/10 group-hover:translate-x-full transition-transform duration-500 -skew-x-12 -translate-x-full"></div>
                                 <Puzzle className="w-5 h-5" />
                                 <span>Add to Chrome</span>
-                            </button>
-                            <span
-                                id="add-to-chrome-status"
-                                className="text-sm text-slate-400 font-medium tracking-wide"
-                            >
-                                Coming soon to the Chrome Web Store
+                            </a>
+                            <span className="text-sm text-slate-400 font-medium tracking-wide">
+                                v1.0.0 Available on Chrome Web Store
                             </span>
                         </div>
                     </div>
