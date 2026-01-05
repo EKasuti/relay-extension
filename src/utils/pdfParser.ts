@@ -160,6 +160,14 @@ function groupItemsByColumn(items: TextItem[], headers: TextItem[]): Record<stri
     return groups;
 }
 
+/**
+ * Parses shift data from a single WhenToWork column into structured Shift objects.
+ *
+ * @param items - The text items that belong to a single WhenToWork date column.
+ * @param dateHeader - The column's date header string (e.g., "Dec-14") used to determine the shift date.
+ * @param year - The year extracted from the "Week Of" header, combined with the date header to form a full date.
+ * @returns An array of Shift objects parsed from the specified WhenToWork column.
+ */
 function parseWTWColumnShifts(items: TextItem[], dateHeader: string, year: number): Shift[] {
     const shifts: Shift[] = [];
 
