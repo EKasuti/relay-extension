@@ -18,6 +18,7 @@ function Sidepanel() {
         'select-source' |
         'import-instructions' |
         'import-whentowork' |
+        'import-whentowork-upload' |
         'import-upload' |
         'job-matching' |
         'manual-entry'
