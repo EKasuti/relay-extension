@@ -92,6 +92,16 @@ export async function parseShiftsFromPdf(file: File): Promise<Shift[]> {
 // WhenToWork Parser
 // ==========================================
 
+/**
+ * Parses shifts from a WhenToWork PDF document.
+ *
+ * This function reads all pages of a WhenToWork-generated schedule PDF,
+ * extracts date headers and shift data, and converts them into an array
+ * of {@link Shift} objects.
+ *
+ * @param pdf - The PDF.js document instance representing the WhenToWork PDF.
+ * @returns A promise that resolves to an array of parsed {@link Shift} objects.
+ */
 async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
     const shifts: Shift[] = [];
 
