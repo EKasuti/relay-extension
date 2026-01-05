@@ -63,13 +63,15 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                                 {availableJobs.length > 0 ? '✓ Jobs Linked' : '↻ Sync JobX'}
                             </button>
                         )}
-                        <button
-                            onClick={onImportMore}
-                            className="text-xs bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded hover:bg-gray-200 font-medium transition-colors"
-                            title="Import more shifts from another source"
-                        >
-                            + Import
-                        </button>
+                        {onImportMore && (
+                            <button
+                                onClick={onImportMore}
+                                className="text-xs bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded hover:bg-gray-200 font-medium transition-colors"
+                                title="Import more shifts from another source"
+                            >
+                                + Import
+                            </button>
+                        )}
                         <button
                             onClick={onAddManualShift}
                             className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium transition-colors"
