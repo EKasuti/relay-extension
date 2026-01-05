@@ -5,9 +5,10 @@ import { parseShiftsFromPdf } from '../utils/pdfParser';
 interface UploadProps {
     onBack: () => void;
     onShiftsParsed: (shifts: Shift[]) => void;
+    source?: 'connectteam' | 'whentowork';
 }
 
-const Upload: React.FC<UploadProps> = ({ onBack, onShiftsParsed }) => {
+const Upload: React.FC<UploadProps> = ({ onBack, onShiftsParsed, source = 'connectteam' }) => {
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<string>('');
 
@@ -32,14 +33,16 @@ const Upload: React.FC<UploadProps> = ({ onBack, onShiftsParsed }) => {
             setStatus(`Successfully parsed ${parsedShifts.length} shifts.`);
         } catch (error) {
             console.error(error);
-            setStatus('Failed to parse PDF. Please ensure the file is a valid ConnectTeam export.');
+            setStatus('Failed to parse PDF. Please ensure the file is a valid export.');
         }
     };
 
     return (
         <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 mb-4 animate-fadeIn">
             <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold text-gray-800">Upload PDF</h2>
+                <h2 className="text-lg font-semibold text-gray-800">
+                    {source === 'whentowork' ? 'Upload WhenToWork PDF' : 'Upload ConnectTeam PDF'}
+                </h2>
                 <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors">Back</button>
             </div>
             <div className="mb-4">
