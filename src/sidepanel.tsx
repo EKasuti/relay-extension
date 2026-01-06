@@ -9,6 +9,7 @@ import Upload from './components/Upload'
 import ManualEntry from './components/ManualEntry'
 import JobXWorkflow from './components/JobXWorkflow'
 import { scrapeJobTitles } from './utils/jobx'
+import { Globe, RotateCcw } from 'lucide-react'
 
 function Sidepanel() {
     const [shifts, setShifts] = useState<Shift[]>([]);
@@ -27,6 +28,19 @@ function Sidepanel() {
     // Global State for JobX
     const [availableJobs, setAvailableJobs] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const handleOpenWebsite = () => {
+        window.open('https://relay-extension-seven.vercel.app/', '_blank');
+    };
+
+    const handleRestart = () => {
+        if (confirm('Are you sure you want to restart? All imported shifts will be cleared.')) {
+            setShifts([]);
+            setStep('select-source');
+            setErrorMessage(null);
+            setAvailableJobs([]);
+        }
+    };
 
     const fetchJobXJobs = async () => {
         setErrorMessage(null);
@@ -74,7 +88,24 @@ function Sidepanel() {
     };
 
     return (
-        <div className="flex flex-col items-center p-4 min-h-screen bg-gray-50 font-sans">
+        <div className="flex flex-col items-center p-4 min-h-screen bg-gray-50 font-sans relative">
+            <div className="absolute top-4 right-4 flex gap-2">
+                <button
+                    onClick={handleOpenWebsite}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Go to Relay Website"
+                >
+                    <Globe size={20} />
+                </button>
+                <button
+                    onClick={handleRestart}
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Restart / Clear All"
+                >
+                    <RotateCcw size={20} />
+                </button>
+            </div>
+
             <h1 className="text-xl font-bold mb-4 text-blue-600 tracking-tight">Relay Sidepanel</h1>
             <div className="mb-6">
                 <img src={relayLogo} className="h-12 w-12 hover:scale-110 transition-transform drop-shadow-sm" alt="Relay logo" />
