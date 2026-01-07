@@ -10,14 +10,16 @@ const LandingPage = () => {
             img: '/logos/connectteam.png',
             description: <>For <strong>Baker-Berry Library</strong> students.</>,
             iconBg: 'bg-white shadow-sm border border-slate-100',
-            iconColor: ''
+            iconColor: '',
+            badge: 'Available'
         },
         {
             name: 'WhenToWork',
             img: '/logos/whentowork.png',
             description: <>Optimized for <strong>DDS (Dartmouth Dining Services)</strong> schedules.</>,
             iconBg: 'bg-white shadow-sm border border-slate-100',
-            iconColor: ''
+            iconColor: '',
+            badge: 'Available'
         },
         {
             name: 'Random Schedule',
@@ -32,7 +34,8 @@ const LandingPage = () => {
             icon: Plus,
             description: 'Quickly add single shifts or make one-off adjustments to your schedule.',
             iconBg: 'bg-gray-50',
-            iconColor: 'text-gray-600'
+            iconColor: 'text-gray-600',
+            badge: 'Available'
         }
     ];
 
@@ -101,7 +104,10 @@ const LandingPage = () => {
                                 {supportedPlatforms.map((platform) => (
                                     <div key={platform.name} className="relative flex flex-col items-center text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
                                         {platform.badge && (
-                                            <div className="absolute top-4 right-4 bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+                                            <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${platform.badge.includes('Coming')
+                                                    ? 'bg-purple-100 text-purple-700'
+                                                    : 'bg-green-100 text-green-700'
+                                                }`}>
                                                 {platform.badge}
                                             </div>
                                         )}
