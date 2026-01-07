@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-01-07
+
+### Added
+- **Edit & Delete Shifts**: Users can now edit or delete pending shifts directly from the Timesheet Detail view.
+- **Random Shift Utility**: Refactored generator logic into a standalone utility for better maintainability.
+
+### Fixed
+- **Time Format**: Fixed issue where editing a shift didn't pre-fill the time correctly (converted 12h to 24h format).
+- **Date Selection**: Enhanced random shift generator to respect specific selected dates.
+
 ## [1.1.1] - 2026-01-05
 
 ### Fixed
