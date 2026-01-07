@@ -29,7 +29,7 @@ const LandingPage = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                             </span>
-                            Available v1.0.0
+                            Available v1.1.1
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.15]">
@@ -57,7 +57,7 @@ const LandingPage = () => {
                                 <span>Add to Chrome</span>
                             </a>
                             <span className="text-sm text-slate-400 font-medium tracking-wide">
-                                v1.0.0 Available on Chrome Web Store
+                                v1.1.1 Available on Chrome Web Store
                             </span>
                         </div>
                     </div>
