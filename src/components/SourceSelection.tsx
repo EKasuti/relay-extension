@@ -1,4 +1,4 @@
-import { Wand2 } from 'lucide-react';
+import { Wand2, Plus } from 'lucide-react';
 
 interface SourceSelectionProps {
     onSelectType: (type: 'import-instructions' | 'manual-entry' | 'import-whentowork' | 'random-schedule') => void;
@@ -28,24 +28,33 @@ const SourceSelection: React.FC<SourceSelectionProps> = ({ onSelectType, onConti
             <div className="grid grid-cols-3 gap-3 p-2">
                 <button
                     onClick={() => onSelectType('import-instructions')}
-                    className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"
+                    className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all group"
                 >
-                    <div className="font-bold text-blue-600 mb-1 group-hover:scale-105 transition-transform">ConnectTeam</div>
-                    <span className="text-xs text-gray-500">Import PDF</span>
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                        <img src="/logos/connectteam.png" alt="ConnectTeam" className="w-6 h-6 object-contain" />
+                    </div>
+                    <div className="font-bold text-blue-600 text-xs mb-0.5">ConnectTeam</div>
+                    <span className="text-[10px] text-gray-500">PDF Upload</span>
                 </button>
                 <button
                     onClick={() => onSelectType('import-whentowork')}
-                    className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 hover:shadow-sm transition-all group"
+                    className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 hover:shadow-md transition-all group"
                 >
-                    <div className="font-bold text-green-600 mb-1 group-hover:scale-105 transition-transform">WhenToWork</div>
-                    <span className="text-xs text-gray-500">Import PDF</span>
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                        <img src="/logos/whentowork.png" alt="WhenToWork" className="w-6 h-6 object-contain" />
+                    </div>
+                    <div className="font-bold text-green-600 text-xs mb-0.5">WhenToWork</div>
+                    <span className="text-[10px] text-gray-500">PDF Upload</span>
                 </button>
                 <button
                     onClick={() => onSelectType('manual-entry')}
-                    className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm transition-all"
+                    className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all group"
                 >
-                    <div className="font-bold text-gray-700 mb-1">Manual</div>
-                    <span className="text-xs text-gray-500">Add Single Shift</span>
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mb-2 shadow-sm border border-gray-200 group-hover:scale-110 transition-transform">
+                        <Plus size={20} className="text-gray-600" />
+                    </div>
+                    <div className="font-bold text-gray-700 text-xs mb-0.5">Manual</div>
+                    <span className="text-[10px] text-gray-500">Single Shift</span>
                 </button>
             </div>
             {hasShifts && (
