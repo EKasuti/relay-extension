@@ -1,7 +1,7 @@
-import React from 'react';
+import { Wand2 } from 'lucide-react';
 
 interface SourceSelectionProps {
-    onSelectType: (type: 'import-instructions' | 'manual-entry' | 'import-whentowork') => void;
+    onSelectType: (type: 'import-instructions' | 'manual-entry' | 'import-whentowork' | 'random-schedule') => void;
     onContinue: () => void;
     hasShifts: boolean;
     shiftCount: number;
@@ -11,7 +11,21 @@ const SourceSelection: React.FC<SourceSelectionProps> = ({ onSelectType, onConti
     return (
         <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 mb-4 transition-all">
             <h2 className="text-lg font-semibold mb-3 text-gray-800">Add Shifts From</h2>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-3">
+                <button
+                    onClick={() => onSelectType('random-schedule')}
+                    className="col-span-2 flex items-center justify-center p-4 border border-purple-200 bg-purple-50 rounded-lg hover:bg-purple-100 hover:border-purple-300 hover:shadow-md transition-all group gap-3"
+                >
+                    <div className="p-2 bg-purple-200 rounded-full text-purple-700 group-hover:scale-110 transition-transform">
+                        <Wand2 size={24} />
+                    </div>
+                    <div className="text-left">
+                        <div className="font-bold text-purple-700 text-lg">Random Schedule</div>
+                        <span className="text-xs text-purple-600">Auto-fill hours for a period</span>
+                    </div>
+                </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3 p-2">
                 <button
                     onClick={() => onSelectType('import-instructions')}
                     className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"

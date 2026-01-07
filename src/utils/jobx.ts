@@ -175,17 +175,18 @@ export const returnToTimesheetList = (): { success: boolean; message: string } =
  * Handles formats: "15:29", "12:30p", "8:03 am", "08:00"
  */
 export const parseTime = (timeStr: string) => {
-    // Robust parser for: "15:29", "12:30p", "8:03 am", "08:00"
+    // Robust parser for: "15:29", "12:30p", "8:03 am", "08:00", "10am", "2pm", "10 am"
     let clean = timeStr.toLowerCase().trim();
     // Keep digits, : and letters a, p, m
     clean = clean.replace(/[^a-z0-9:]/g, '');
 
-    // Extract H:M
-    const match = clean.match(/(\d{1,2}):(\d{1,2})/);
+    // Extract H:M or just H
+    // Matches start with 1-2 digits, optionally followed by : and 1-2 digits
+    const match = clean.match(/^(\d{1,2})(?::(\d{1,2}))?/);
     if (!match) return null;
 
     let h = parseInt(match[1], 10);
-    let m = parseInt(match[2], 10);
+    let m = match[2] ? parseInt(match[2], 10) : 0;
 
     if (m < 0 || m > 59) return null;
 

@@ -28,6 +28,7 @@ function Sidepanel() {
     // Global State for JobX
     const [availableJobs, setAvailableJobs] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [isRandomMode, setIsRandomMode] = useState(false);
 
     const handleOpenWebsite = () => {
         window.open('https://relay-extension-seven.vercel.app/', '_blank');
@@ -39,6 +40,7 @@ function Sidepanel() {
             setStep('select-source');
             setErrorMessage(null);
             setAvailableJobs([]);
+            setIsRandomMode(false);
         }
     };
 
@@ -120,7 +122,15 @@ function Sidepanel() {
 
             {step === 'select-source' && (
                 <SourceSelection
-                    onSelectType={setStep}
+                    onSelectType={(newStep) => {
+                        if (newStep === 'random-schedule') {
+                            setIsRandomMode(true);
+                            setStep('job-matching');
+                        } else {
+                            setIsRandomMode(false);
+                            setStep(newStep);
+                        }
+                    }}
                     onContinue={() => setStep('job-matching')}
                     hasShifts={shifts.length > 0}
                     shiftCount={shifts.length}
@@ -174,6 +184,7 @@ function Sidepanel() {
                     availableJobs={availableJobs}
                     onFetchJobs={fetchJobXJobs}
                     onExit={() => setStep('select-source')}
+                    isRandomMode={isRandomMode}
                 />
             )}
         </div>
