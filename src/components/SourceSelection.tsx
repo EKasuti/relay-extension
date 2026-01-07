@@ -1,4 +1,5 @@
-import { Wand2, Plus } from 'lucide-react';
+import { Wand2, Plus, FileText, Calendar } from 'lucide-react';
+import { useState } from 'react';
 
 interface SourceSelectionProps {
     onSelectType: (type: 'import-instructions' | 'manual-entry' | 'import-whentowork' | 'random-schedule') => void;
@@ -6,6 +7,32 @@ interface SourceSelectionProps {
     hasShifts: boolean;
     shiftCount: number;
 }
+
+const SourceButton = ({ onClick, logoSrc, FallbackIcon, label, subLabel, colorClass, borderClass }: any) => {
+    const [imgError, setImgError] = useState(false);
+
+    return (
+        <button
+            onClick={onClick}
+            className={`flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg ${borderClass} hover:shadow-md transition-all group`}
+        >
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                {!imgError ? (
+                    <img
+                        src={logoSrc}
+                        alt={label}
+                        className="w-6 h-6 object-contain"
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <FallbackIcon size={20} className={colorClass} />
+                )}
+            </div>
+            <div className={`font-bold ${colorClass} text-xs mb-0.5`}>{label}</div>
+            <span className="text-[10px] text-gray-500">{subLabel}</span>
+        </button>
+    );
+};
 
 const SourceSelection: React.FC<SourceSelectionProps> = ({ onSelectType, onContinue, hasShifts, shiftCount }) => {
     return (
@@ -26,26 +53,25 @@ const SourceSelection: React.FC<SourceSelectionProps> = ({ onSelectType, onConti
                 </button>
             </div>
             <div className="grid grid-cols-3 gap-3 p-2">
-                <button
+                <SourceButton
                     onClick={() => onSelectType('import-instructions')}
-                    className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all group"
-                >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
-                        <img src="/logos/connectteam.png" alt="ConnectTeam" className="w-6 h-6 object-contain" />
-                    </div>
-                    <div className="font-bold text-blue-600 text-xs mb-0.5">ConnectTeam</div>
-                    <span className="text-[10px] text-gray-500">PDF Upload</span>
-                </button>
-                <button
+                    logoSrc="/logos/connectteam.png"
+                    FallbackIcon={FileText}
+                    label="ConnectTeam"
+                    subLabel="PDF Upload"
+                    colorClass="text-blue-600"
+                    borderClass="hover:bg-blue-50 hover:border-blue-300"
+                />
+                <SourceButton
                     onClick={() => onSelectType('import-whentowork')}
-                    className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 hover:shadow-md transition-all group"
-                >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
-                        <img src="/logos/whentowork.png" alt="WhenToWork" className="w-6 h-6 object-contain" />
-                    </div>
-                    <div className="font-bold text-green-600 text-xs mb-0.5">WhenToWork</div>
-                    <span className="text-[10px] text-gray-500">PDF Upload</span>
-                </button>
+                    logoSrc="/logos/whentowork.png"
+                    FallbackIcon={Calendar}
+                    label="WhenToWork"
+                    subLabel="PDF Upload"
+                    colorClass="text-green-600"
+                    borderClass="hover:bg-green-50 hover:border-green-300"
+                />
+
                 <button
                     onClick={() => onSelectType('manual-entry')}
                     className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all group"

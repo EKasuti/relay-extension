@@ -1,24 +1,60 @@
 
+import { useState } from 'react';
 import relayLogo from '/logo.png';
-import { Plus, Wand2, Puzzle } from 'lucide-react';
+import { Plus, Wand2, Puzzle, FileText, Calendar } from 'lucide-react';
 import Footer from './Footer';
+
+const PlatformCard = ({ platform }: { platform: any }) => {
+    const [imgError, setImgError] = useState(false);
+
+    return (
+        <div className="relative flex flex-col items-center text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+            {platform.badge && (
+                <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${platform.badge.includes('Coming')
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}>
+                    {platform.badge}
+                </div>
+            )}
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${platform.iconBg}`}>
+                {platform.img && !imgError ? (
+                    <img
+                        src={platform.img}
+                        alt={platform.name}
+                        className="w-10 h-10 object-contain"
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    platform.icon && <platform.icon size={32} strokeWidth={2} className={platform.iconColor} />
+                )}
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg mb-2">{platform.name}</h3>
+            <p className="text-slate-500 leading-relaxed max-w-sm">
+                {platform.description}
+            </p>
+        </div>
+    );
+};
 
 const LandingPage = () => {
     const supportedPlatforms = [
         {
             name: 'ConnectTeam',
             img: '/logos/connectteam.png',
+            icon: FileText,
             description: <>For <strong>Baker-Berry Library</strong> students.</>,
             iconBg: 'bg-white shadow-sm border border-slate-100',
-            iconColor: '',
+            iconColor: 'text-blue-600',
             badge: 'Available'
         },
         {
             name: 'WhenToWork',
             img: '/logos/whentowork.png',
+            icon: Calendar,
             description: <>Optimized for <strong>DDS (Dartmouth Dining Services)</strong> schedules.</>,
             iconBg: 'bg-white shadow-sm border border-slate-100',
-            iconColor: '',
+            iconColor: 'text-green-600',
             badge: 'Available'
         },
         {
@@ -102,27 +138,7 @@ const LandingPage = () => {
 
                             <div className="grid md:grid-cols-2 gap-6">
                                 {supportedPlatforms.map((platform) => (
-                                    <div key={platform.name} className="relative flex flex-col items-center text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                                        {platform.badge && (
-                                            <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${platform.badge.includes('Coming')
-                                                    ? 'bg-purple-100 text-purple-700'
-                                                    : 'bg-green-100 text-green-700'
-                                                }`}>
-                                                {platform.badge}
-                                            </div>
-                                        )}
-                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${platform.iconBg}`}>
-                                            {platform.img ? (
-                                                <img src={platform.img} alt={platform.name} className="w-10 h-10 object-contain" />
-                                            ) : (
-                                                platform.icon && <platform.icon size={32} strokeWidth={2} className={platform.iconColor} />
-                                            )}
-                                        </div>
-                                        <h3 className="font-bold text-slate-900 text-lg mb-2">{platform.name}</h3>
-                                        <p className="text-slate-500 leading-relaxed max-w-sm">
-                                            {platform.description}
-                                        </p>
-                                    </div>
+                                    <PlatformCard key={platform.name} platform={platform} />
                                 ))}
                             </div>
                         </div>
