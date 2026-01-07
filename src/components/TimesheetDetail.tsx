@@ -129,6 +129,9 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                                     <div className="font-medium text-gray-800">{new Date(shift.date).toLocaleDateString()}</div>
                                     <div className="text-xs text-gray-500">{shift.startTime} - {shift.endTime}</div>
                                     <div className="text-xs text-gray-500 font-mono">{shift.totalHours} hrs</div>
+                                    {shift.description && (
+                                        <div className="text-xs text-gray-400 italic mt-0.5 break-words max-w-[200px]">{shift.description}</div>
+                                    )}
                                     {/* Inline Alert for Error */}
                                     {shift.fillStatus === 'error' && (
                                         <div className="text-xs text-red-600 mt-1">{shift.fillMessage}</div>
