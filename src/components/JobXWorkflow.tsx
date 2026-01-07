@@ -20,6 +20,7 @@ interface JobXWorkflowProps {
     availableJobs: string[];
     onFetchJobs: () => Promise<void>;
     onExit: () => void;
+    isRandomMode?: boolean;
 }
 
 const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
@@ -27,7 +28,8 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
     setShifts,
     availableJobs,
     onFetchJobs,
-    onExit
+    onExit,
+    isRandomMode
 }) => {
     // Internal State
     const [step, setStep] = useState<'job-matching' | 'timesheet-selection' | 'timesheet-detail' | 'manual-entry'>('job-matching');
@@ -35,6 +37,7 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
     const [activeTimesheet, setActiveTimesheet] = useState<Timesheet | null>(null);
     const [activeJobTitle, setActiveJobTitle] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [editingShiftIndex, setEditingShiftIndex] = useState<number | null>(null);
 
     // Helper for script execution
     const execute = async <T,>(fn: (...args: any[]) => T, args: any[] = [], world: 'ISOLATED' | 'MAIN' = 'ISOLATED'): Promise<{ result: T } | null> => {
@@ -222,6 +225,19 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
         }
     };
 
+    const handleDeleteShift = (shiftToDelete: Shift) => {
+        setShifts(shifts.filter(s => s !== shiftToDelete));
+    };
+
+    const handleEditShift = (shiftToEdit: Shift) => {
+        const index = shifts.indexOf(shiftToEdit);
+        if (index !== -1) {
+            setEditingShiftIndex(index);
+            setActiveJobTitle(shiftToEdit.jobTitle);
+            setStep('manual-entry');
+        }
+    };
+
     return (
         <div className="w-full">
             {errorMessage && (
@@ -237,12 +253,14 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                     onAddManualShift={() => {
                         setActiveJobTitle(null);
                         setActiveTimesheet(null);
+                        setEditingShiftIndex(null);
                         setStep('manual-entry');
                     }}
                     availableJobs={availableJobs}
                     onFetchJobs={onFetchJobs}
                     onAutoFill={handleAutoFill}
                     onImportMore={onExit}
+                    isRandomMode={isRandomMode}
                 />
             )}
 
@@ -295,8 +313,15 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                     })}
                     jobTitle={activeJobTitle || 'Unknown Job'}
                     onBack={handleBackFromDetail}
-                    onAddShift={() => setStep('manual-entry')}
+                    onAddShift={() => {
+                        setEditingShiftIndex(null);
+                        setStep('manual-entry');
+                    }}
+                    onAddShifts={(newShifts) => setShifts([...shifts, ...newShifts])}
                     onTransferShifts={handleTransferShifts}
+                    onDeleteShift={handleDeleteShift}
+                    onEditShift={handleEditShift}
+                    autoOpenGenerator={isRandomMode}
                 />
             )}
 
@@ -307,11 +332,22 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                         else setStep('job-matching');
                     }}
                     onShiftAdded={(shift) => {
-                        setShifts([...shifts, shift]);
+                        if (editingShiftIndex !== null) {
+                            // Update existing
+                            const updated = [...shifts];
+                            updated[editingShiftIndex] = shift;
+                            setShifts(updated);
+                            setEditingShiftIndex(null);
+                        } else {
+                            // Add new
+                            setShifts([...shifts, shift]);
+                        }
+
                         if (activeTimesheet) setStep('timesheet-detail');
                         else setStep('job-matching');
                     }}
                     preselectedJobTitle={activeTimesheet ? (activeJobTitle || undefined) : undefined}
+                    initialShift={editingShiftIndex !== null ? shifts[editingShiftIndex] : undefined}
                 />
             )}
         </div>

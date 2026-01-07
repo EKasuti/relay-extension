@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Timesheet, Shift } from '../types';
 
 interface TimesheetDetailProps {
@@ -7,11 +7,26 @@ interface TimesheetDetailProps {
     jobTitle: string;
     onBack: () => void;
     onAddShift: () => void;
+    onAddShifts?: (shifts: Shift[]) => void;
     onTransferShifts?: (shifts: Shift[]) => void;
+    autoOpenGenerator?: boolean;
+    onDeleteShift?: (shift: Shift) => void;
+    onEditShift?: (shift: Shift) => void;
 }
 
-const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jobTitle, onBack, onAddShift, onTransferShifts }) => {
+import { Wand2, Pencil, Trash2 } from 'lucide-react';
+import RandomShiftGenerator from './RandomShiftGenerator';
+
+const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jobTitle, onBack, onAddShift, onAddShifts, onTransferShifts, autoOpenGenerator, onDeleteShift, onEditShift }) => {
     const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+    const [showGenerator, setShowGenerator] = useState(false);
+
+    // Auto-open generator if requested and no shifts exist yet
+    useEffect(() => {
+        if (autoOpenGenerator && shifts.length === 0) {
+            setShowGenerator(true);
+        }
+    }, [autoOpenGenerator, shifts.length]);
 
     const toggleSelection = (index: number) => {
         const newSelection = new Set(selectedIndices);
@@ -45,7 +60,23 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
     };
 
     return (
-        <div className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md mx-auto">
+        <div className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md mx-auto relative">
+            {showGenerator && (
+                <RandomShiftGenerator
+                    startDate={timesheet.startDate}
+                    endDate={timesheet.endDate}
+                    jobTitle={jobTitle}
+                    onGenerate={(generated) => {
+                        setShowGenerator(false);
+                        // Trigger callback
+                        if (onAddShifts) {
+                            onAddShifts(generated);
+                        }
+                    }}
+                    onCancel={() => setShowGenerator(false)}
+                />
+            )}
+
             <div className="mb-6 border-b pb-4">
                 <button
                     onClick={onBack}
@@ -116,9 +147,26 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                                         </span>
                                     )}
                                     {(!shift.fillStatus || shift.fillStatus === 'pending') && (
-                                        <span className="text-gray-400 text-xs flex items-center">
-                                            Pending
-                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            {onEditShift && (
+                                                <button
+                                                    onClick={() => onEditShift(shift)}
+                                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                    title="Edit Shift"
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                            )}
+                                            {onDeleteShift && (
+                                                <button
+                                                    onClick={() => onDeleteShift(shift)}
+                                                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    title="Delete Shift"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -136,12 +184,21 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                 </button>
             )}
 
-            <button
-                onClick={onAddShift}
-                className="w-full py-2 px-4 mb-3 border-2 border-dashed border-blue-300 text-blue-600 rounded hover:bg-blue-50 font-bold transition-colors flex justify-center items-center gap-2"
-            >
-                + Add Shift manually
-            </button>
+            <div className="flex gap-2">
+                <button
+                    onClick={() => setShowGenerator(true)}
+                    className="flex-1 py-2 px-3 border border-purple-200 bg-purple-50 text-purple-700 rounded hover:bg-purple-100 font-bold transition-colors flex justify-center items-center gap-2"
+                >
+                    <Wand2 size={16} />
+                    Auto-Generate
+                </button>
+                <button
+                    onClick={onAddShift}
+                    className="flex-1 py-2 px-3 border-2 border-dashed border-blue-300 text-blue-600 rounded hover:bg-blue-50 font-bold transition-colors flex justify-center items-center gap-2"
+                >
+                    + Add Manual
+                </button>
+            </div>
         </div>
     );
 };

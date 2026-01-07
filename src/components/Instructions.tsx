@@ -1,4 +1,5 @@
 import React from 'react';
+import { ExternalLink } from 'lucide-react';
 
 interface InstructionsProps {
     onBack: () => void;
@@ -21,7 +22,17 @@ const Instructions: React.FC<InstructionsProps> = ({ onBack, onNext, source = 'c
                     </>
                 ) : (
                     <>
-                        <p>1. Go to your ConnectTeam Timesheets.</p>
+                        <p className="flex items-center flex-wrap gap-1">
+                            1. Go to your
+                            <a
+                                href="https://app.connecteam.com/index.html#/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline flex items-center gap-1 font-medium"
+                            >
+                                ConnectTeam Timesheets <ExternalLink size={12} />
+                            </a>.
+                        </p>
                         <p>2. Navigate to the <strong>Operations</strong> tab and click <strong>Time Clock</strong>.</p>
                         <p>3. Select the range of dates you want to export.</p>
                         <p>4. Click <strong>Export</strong> and the file will be automatically downloaded.</p>
