@@ -4,6 +4,7 @@ export interface Shift {
     endTime: string;
     totalHours: number;
     jobTitle: string;
+    description?: string;
     isMigrated: boolean;
     fillStatus?: 'pending' | 'success' | 'error';
     fillMessage?: string;

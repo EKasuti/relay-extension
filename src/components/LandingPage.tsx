@@ -1,9 +1,41 @@
 
 import relayLogo from '/logo.png';
-import { Zap, Calendar, Lock, Puzzle } from 'lucide-react';
+import { Plus, Wand2, Puzzle } from 'lucide-react';
 import Footer from './Footer';
 
 const LandingPage = () => {
+    const supportedPlatforms = [
+        {
+            name: 'ConnectTeam',
+            img: '/logos/connectteam.png',
+            description: <>For <strong>Baker-Berry Library</strong> students.</>,
+            iconBg: 'bg-white shadow-sm border border-slate-100',
+            iconColor: ''
+        },
+        {
+            name: 'WhenToWork',
+            img: '/logos/whentowork.png',
+            description: <>Optimized for <strong>DDS (Dartmouth Dining Services)</strong> schedules.</>,
+            iconBg: 'bg-white shadow-sm border border-slate-100',
+            iconColor: ''
+        },
+        {
+            name: 'Random Schedule',
+            icon: Wand2,
+            description: 'For jobs where you don\'t clock in or out but need to randomize hours at the end of the pay period.',
+            iconBg: 'bg-purple-50',
+            iconColor: 'text-purple-600',
+            badge: 'Coming in v1.2.0'
+        },
+        {
+            name: 'Manual Entry',
+            icon: Plus,
+            description: 'Quickly add single shifts or make one-off adjustments to your schedule.',
+            iconBg: 'bg-gray-50',
+            iconColor: 'text-gray-600'
+        }
+    ];
+
     return (
         <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-900 selection:bg-[#E4930A] selection:text-white flex flex-col">
 
@@ -60,47 +92,33 @@ const LandingPage = () => {
                                 v1.1.1 Available on Chrome Web Store
                             </span>
                         </div>
-                    </div>
-                </section>
 
-                {/* Features Section */}
-                <section className="py-20 bg-slate-50 border-t border-slate-100">
-                    <div className="max-w-6xl mx-auto px-6">
-                        <div className="grid md:grid-cols-3 gap-8">
+                        {/* Supported Platforms Grid */}
+                        <div className="mt-16 border-t border-slate-100 pt-12">
+                            <p className="text-slate-400 text-sm font-bold mb-8 uppercase tracking-widest text-center">Supported Platforms</p>
 
-                            {/* Card 1 */}
-                            <div className="bg-white p-8 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-                                <div className="h-12 w-12 bg-[#16467C]/5 rounded-xl flex items-center justify-center mb-6 text-2xl border border-[#16467C]/10 text-[#16467C]">
-                                    <Zap className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-lg font-bold mb-3 text-slate-900">Smart Autofill</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Automatically finds the correct job on JobX and fills in your start and end times instantly.
-                                </p>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {supportedPlatforms.map((platform) => (
+                                    <div key={platform.name} className="relative flex flex-col items-center text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
+                                        {platform.badge && (
+                                            <div className="absolute top-4 right-4 bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+                                                {platform.badge}
+                                            </div>
+                                        )}
+                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${platform.iconBg}`}>
+                                            {platform.img ? (
+                                                <img src={platform.img} alt={platform.name} className="w-10 h-10 object-contain" />
+                                            ) : (
+                                                platform.icon && <platform.icon size={32} strokeWidth={2} className={platform.iconColor} />
+                                            )}
+                                        </div>
+                                        <h3 className="font-bold text-slate-900 text-lg mb-2">{platform.name}</h3>
+                                        <p className="text-slate-500 leading-relaxed max-w-sm">
+                                            {platform.description}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
-
-                            {/* Card 2 */}
-                            <div className="bg-white p-8 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-                                <div className="h-12 w-12 bg-[#16467C]/5 rounded-xl flex items-center justify-center mb-6 text-2xl border border-[#16467C]/10 text-[#16467C]">
-                                    <Calendar className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-lg font-bold mb-3 text-slate-900">Schedule Import</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Forget manual entry. Upload your shift schedule file directly and Relay handles the parsing.
-                                </p>
-                            </div>
-
-                            {/* Card 3 */}
-                            <div className="bg-white p-8 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1">
-                                <div className="h-12 w-12 bg-[#16467C]/5 rounded-xl flex items-center justify-center mb-6 text-2xl border border-[#16467C]/10 text-[#16467C]">
-                                    <Lock className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-lg font-bold mb-3 text-slate-900">Privacy First</h3>
-                                <p className="text-slate-500 leading-relaxed text-sm">
-                                    Relay operates entirely on your device. Your schedule data never leaves your browser.
-                                </p>
-                            </div>
-
                         </div>
                     </div>
                 </section>

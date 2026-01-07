@@ -19,12 +19,12 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, presele
             return `${parts[0].padStart(2, '0')}:${parts[1]}`;
         }
 
-        // Parse "9:30am", "10:00 PM", etc. using our utils logic or custom regex relative to formatTime in generator
+        // Parse "9:30am", "10:00 PM", "9pm" etc.
         const lower = timeStr.toLowerCase().trim();
-        const match = lower.match(/(\d{1,2}):(\d{2})\s*([ap]m)/);
+        const match = lower.match(/(\d{1,2})(?::(\d{2}))?\s*([ap]m)/);
         if (match) {
             let h = parseInt(match[1]);
-            const m = match[2];
+            const m = match[2] || '00'; // Default to 00 if no minutes
             const p = match[3]; // am or pm
 
             if (p === 'pm' && h < 12) h += 12;
@@ -39,7 +39,8 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, presele
         date: initialShift ? initialShift.date.split('T')[0] : '',
         startTime: initialShift ? to24h(initialShift.startTime) : '',
         endTime: initialShift ? to24h(initialShift.endTime) : '',
-        jobTitle: initialShift ? initialShift.jobTitle : (preselectedJobTitle || '')
+        jobTitle: initialShift ? initialShift.jobTitle : (preselectedJobTitle || ''),
+        description: initialShift ? (initialShift.description || '') : ''
     });
     const [status, setStatus] = useState<string>('');
 
@@ -82,6 +83,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, presele
             endTime: manualShift.endTime,
             totalHours: parseFloat(total.toFixed(2)),
             jobTitle: manualShift.jobTitle || 'Manual Entry',
+            description: manualShift.description,
             isMigrated: false
         };
 
@@ -89,9 +91,9 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, presele
         if (initialShift) {
             onBack();
         } else if (!preselectedJobTitle) {
-            setManualShift({ date: '', startTime: '', endTime: '', jobTitle: '' });
+            setManualShift({ date: '', startTime: '', endTime: '', jobTitle: '', description: '' });
         } else {
-            setManualShift(prev => ({ ...prev, date: '', startTime: '', endTime: '' }));
+            setManualShift(prev => ({ ...prev, date: '', startTime: '', endTime: '', description: '' }));
         }
         setStatus('Shift added manually.');
     };
@@ -143,6 +145,15 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onBack, onShiftAdded, presele
                             className="border border-gray-300 rounded w-full p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         />
                     </div>
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Description (Optional)</label>
+                    <textarea
+                        value={manualShift.description}
+                        onChange={e => setManualShift({ ...manualShift, description: e.target.value })}
+                        className="border border-gray-300 rounded w-full p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all h-20 resize-none"
+                        placeholder="e.g. Work on project X"
+                    />
                 </div>
                 <button
                     onClick={handleManualAdd}

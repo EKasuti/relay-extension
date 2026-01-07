@@ -13,6 +13,7 @@ const CONFIG = {
     IDX_X: 4,
     IDX_Y: 5,
     WTW_SIGNATURE: 'WhenToWork.com',
+    LINE_HEIGHT_THRESHOLD: 18, // Heuristic: lines closer than this are part of the same block
 };
 
 const REGEX = {
@@ -64,284 +65,7 @@ interface UnmatchedShift {
 }
 
 // ==========================================
-// Core Parser
-// ==========================================
-
-/**
- * Parses shifts from a PDF file.
- * Automatically detects format (ConnectTeam or WhenToWork) and delegates to specific parsers.
- */
-export async function parseShiftsFromPdf(file: File): Promise<Shift[]> {
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
-
-    // Detect Format from Page 1 signature
-    const page1 = await pdf.getPage(1);
-    const content1 = await page1.getTextContent();
-    const allText = content1.items.map((item: any) => item.str).join(' ');
-
-    if (allText.includes(CONFIG.WTW_SIGNATURE)) {
-        return parseWhenToWorkPdf(pdf);
-    } else {
-        return parseConnectTeamPdf(pdf);
-    }
-}
-
-// ==========================================
-// WhenToWork Parser
-// ==========================================
-
-/**
- * Parses shifts from a WhenToWork PDF document.
- *
- * This function reads all pages of a WhenToWork-generated schedule PDF,
- * extracts date headers and shift data, and converts them into an array
- * of {@link Shift} objects.
- *
- * @param pdf - The PDF.js document instance representing the WhenToWork PDF.
- * @returns A promise that resolves to an array of parsed {@link Shift} objects.
- */
-async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
-    const shifts: Shift[] = [];
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const items = textContent.items as unknown as TextItem[];
-
-        // 1. Extract context (Year)
-        const year = extractYearFromWTW(items);
-
-        // 2. Identify Date Columns
-        const dateHeaders = items.filter(i => REGEX.DATE_HEADER_WTW.test(i.str.trim()))
-            .sort((a, b) => a.transform[CONFIG.IDX_X] - b.transform[CONFIG.IDX_X]);
-
-        if (dateHeaders.length === 0) continue;
-
-        // 3. Group items by column
-        const columnItems = groupItemsByColumn(items, dateHeaders);
-
-        // 4. Parse shifts per column
-        for (const [dateStr, colItems] of Object.entries(columnItems)) {
-            const parsedShifts = parseWTWColumnShifts(colItems, dateStr, year);
-            shifts.push(...parsedShifts);
-        }
-    }
-
-    if (shifts.length === 0) console.warn('No shifts parsed (WhenToWork).');
-    return shifts;
-}
-
-function extractYearFromWTW(items: TextItem[]): number {
-    const allStr = items.map(i => i.str).join(' ');
-    const match = allStr.match(REGEX.WEEK_OF_WTW);
-    return match ? parseInt(match[1], 10) : new Date().getFullYear();
-}
-
-/**
- * Groups non-header text items into columns based on their proximity to header items.
- *
- * Each non-header item is assigned to the closest header on the X-axis that is above it
- * on the page, producing a mapping from header text to the items in that column.
- *
- * @param items - All text items extracted from the page, including headers and non-headers.
- * @param headers - Text items that act as column headers (e.g., date labels).
- * @returns A mapping from each header's text to the list of text items belonging to that column.
- */
-function groupItemsByColumn(items: TextItem[], headers: TextItem[]): Record<string, TextItem[]> {
-    const groups: Record<string, TextItem[]> = {};
-    headers.forEach(h => groups[h.str] = []);
-
-    const nonHeaderItems = items.filter(i => !REGEX.DATE_HEADER_WTW.test(i.str.trim()));
-
-    // Optimization: Calculate column X-midpoints for O(1) assignment
-    const boundaries: { header: TextItem, maxX: number }[] = [];
-    for (let i = 0; i < headers.length; i++) {
-        const current = headers[i];
-        const next = headers[i + 1];
-
-        let maxX = Infinity;
-        if (next) {
-            // Midpoint between this header and next
-            maxX = (current.transform[CONFIG.IDX_X] + next.transform[CONFIG.IDX_X]) / 2;
-        }
-        boundaries.push({ header: current, maxX });
-    }
-
-    // Single pass through items (O(N))
-    for (const item of nonHeaderItems) {
-        const itemX = item.transform[CONFIG.IDX_X];
-        const itemY = item.transform[CONFIG.IDX_Y];
-
-        // Find which column it falls into
-        const match = boundaries.find(b => itemX < b.maxX);
-        if (match) {
-            // Only add if visually below the header line
-            if (itemY < match.header.transform[CONFIG.IDX_Y]) {
-                groups[match.header.str].push(item);
-            }
-        }
-    }
-
-    return groups;
-}
-
-/**
- * Parses shift data from a single WhenToWork column into structured Shift objects.
- *
- * @param items - The text items that belong to a single WhenToWork date column.
- * @param dateHeader - The column's date header string (e.g., "Dec-14") used to determine the shift date.
- * @param year - The year extracted from the "Week Of" header, combined with the date header to form a full date.
- * @returns An array of Shift objects parsed from the specified WhenToWork column.
- */
-function parseWTWColumnShifts(items: TextItem[], dateHeader: string, year: number): Shift[] {
-    const shifts: Shift[] = [];
-
-    // Sort top-to-bottom
-    const sortedItems = items
-        .filter(i => i.str.trim().length > 0)
-        .sort((a, b) => b.transform[CONFIG.IDX_Y] - a.transform[CONFIG.IDX_Y]);
-
-    let currentJobTitle = "Unknown";
-    const fullDate = FormatUtils.parseDateWTW(dateHeader, year);
-
-    if (!fullDate) return [];
-
-    let i = 0;
-    while (i < sortedItems.length) {
-        const item = sortedItems[i];
-        const text = item.str;
-
-        // Try to match time patterns
-        const combinedMatch = text.match(REGEX_TIME_RANGE_COMBINED);
-        const singleStartMatch = text.match(REGEX_TIME_SINGLE);
-
-        if (combinedMatch && combinedMatch[2]) {
-            // Case A: "10am - 12pm" (Combined)
-            const startTime = combinedMatch[1];
-            const endTime = combinedMatch[2];
-            shifts.push({
-                date: fullDate,
-                startTime,
-                endTime,
-                totalHours: TimeUtils.calculateDuration(startTime, endTime),
-                jobTitle: currentJobTitle.trim(),
-                isMigrated: false
-            });
-            i++; // Move to next item
-        }
-        else if (singleStartMatch) {
-            // Case B: "10am -" (Split Line)
-            const startTime = singleStartMatch[1];
-
-            // Look ahead for End Time (next item)
-            if (i + 1 < sortedItems.length) {
-                const nextItem = sortedItems[i + 1];
-                const endMatch = nextItem.str.match(REGEX_TIME_SINGLE);
-
-                if (endMatch) {
-                    const endTime = endMatch[1];
-                    shifts.push({
-                        date: fullDate,
-                        startTime,
-                        endTime,
-                        totalHours: TimeUtils.calculateDuration(startTime, endTime),
-                        jobTitle: currentJobTitle.trim(),
-                        isMigrated: false
-                    });
-                    i += 2; // Consume both items
-                    continue; // Skip the increment at end of loop since we handled it
-                }
-            }
-            i++;
-        }
-        else {
-            // Not a time -> assume it's a Job Title
-            if (text.trim().length > 1 && !text.includes(CONFIG.WTW_SIGNATURE)) {
-                currentJobTitle = text;
-            }
-            i++;
-        }
-    }
-
-    return shifts;
-}
-
-
-// ==========================================
-// ConnectTeam Parser
-// ==========================================
-
-async function parseConnectTeamPdf(pdf: any): Promise<Shift[]> {
-    const shifts: Shift[] = [];
-    let year = new Date().getFullYear();
-    let yearFound = false;
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const items = textContent.items as unknown as TextItem[];
-
-        // Group text items by physical line (Y-coordinate)
-        const lines = HelperUtils.groupItemsByLine(items);
-
-        const dateAnchors: DateAnchor[] = [];
-        const shiftLines: UnmatchedShift[] = [];
-
-        for (const line of lines) {
-            const fullLine = line.items.map(i => i.str).join(' ');
-
-            // 1. Try to find year
-            if (!yearFound) {
-                const foundYear = HelperUtils.findYearInText(fullLine);
-                if (foundYear) {
-                    year = foundYear;
-                    yearFound = true;
-                }
-            }
-
-            // 2. Identify Date Anchors (e.g. "Sat 6/7")
-            const dateMatch = fullLine.match(REGEX.DATE_ROW_CONNECT_TEAM);
-            if (dateMatch) {
-                dateAnchors.push({ date: dateMatch[1], y: line.y });
-            }
-
-            // 3. Identify Shift Rows
-            const shiftLine = HelperUtils.parseConnectTeamShiftLine(fullLine, line.y);
-            if (shiftLine) {
-                shiftLines.push(shiftLine);
-            }
-        }
-
-        // Match shifts to closest date anchor
-        if (dateAnchors.length > 0) {
-            shiftLines.forEach(shift => {
-                const bestAnchor = HelperUtils.findClosestY(shift.y, dateAnchors);
-                if (bestAnchor) {
-                    const [m, d] = bestAnchor.date.split('/');
-                    const fullDate = FormatUtils.formatIsoDate(year, m, d);
-
-                    shifts.push({
-                        date: fullDate,
-                        startTime: shift.startTime,
-                        endTime: shift.endTime,
-                        totalHours: shift.totalHours,
-                        jobTitle: shift.jobTitle,
-                        isMigrated: false
-                    });
-                }
-            });
-        }
-    }
-
-    if (shifts.length === 0) console.warn('No shifts parsed (ConnectTeam).');
-    return shifts;
-}
-
-
-// ==========================================
-// Utilities
+// Utilities (Moved to top to prevent hoisting issues)
 // ==========================================
 
 const TimeUtils = {
@@ -483,3 +207,349 @@ const HelperUtils = {
         return best;
     }
 };
+
+// ==========================================
+// Core Parser
+// ==========================================
+
+/**
+ * Parses shifts from a PDF file.
+ * Automatically detects format (ConnectTeam or WhenToWork) and delegates to specific parsers.
+ */
+export async function parseShiftsFromPdf(file: File): Promise<Shift[]> {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+
+    // Detect Format from Page 1 signature
+    const page1 = await pdf.getPage(1);
+    const content1 = await page1.getTextContent();
+    const allText = content1.items.map((item: any) => item.str).join(' '); // Keep spaces for readability in logs
+    const normalizedText = allText.replace(/\s+/g, '').toLowerCase();
+
+    // Check for "whentowork" (case insensitive, no spaces) or "weekof" (standard WTW header)
+    if (normalizedText.includes('whentowork') || normalizedText.includes('weekof')) {
+        return parseWhenToWorkPdf(pdf);
+    } else {
+        return parseConnectTeamPdf(pdf);
+    }
+}
+
+// ==========================================
+// WhenToWork Parser
+// ==========================================
+
+/**
+ * Parses shifts from a WhenToWork PDF document.
+ */
+async function parseWhenToWorkPdf(pdf: any): Promise<Shift[]> {
+    const shifts: Shift[] = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const items = textContent.items as unknown as TextItem[];
+
+        // 1. Extract context (Year)
+        const year = extractYearFromWTW(items);
+
+        // 2. Identify Date Columns
+        const dateHeaders = items.filter(i => REGEX.DATE_HEADER_WTW.test(i.str.trim()))
+            .sort((a, b) => a.transform[CONFIG.IDX_X] - b.transform[CONFIG.IDX_X]);
+
+        if (dateHeaders.length === 0) continue;
+
+        // 3. Group items by column
+        const columnItems = groupItemsByColumn(items, dateHeaders);
+
+        // 4. Parse shifts per column
+        for (const [dateStr, colItems] of Object.entries(columnItems)) {
+            const parsedShifts = parseWTWColumnShifts(colItems, dateStr, year);
+            shifts.push(...parsedShifts);
+        }
+    }
+
+    if (shifts.length === 0) console.warn('No shifts parsed (WhenToWork).');
+    return shifts;
+}
+
+function extractYearFromWTW(items: TextItem[]): number {
+    const allStr = items.map(i => i.str).join(' ');
+    const match = allStr.match(REGEX.WEEK_OF_WTW);
+    return match ? parseInt(match[1], 10) : new Date().getFullYear();
+}
+
+/**
+ * Groups non-header text items into columns based on their proximity to header items.
+ */
+function groupItemsByColumn(items: TextItem[], headers: TextItem[]): Record<string, TextItem[]> {
+    const groups: Record<string, TextItem[]> = {};
+    headers.forEach(h => groups[h.str] = []);
+
+    const nonHeaderItems = items.filter(i => !REGEX.DATE_HEADER_WTW.test(i.str.trim()));
+
+    // Optimization: Calculate column X-midpoints for O(1) assignment
+    const boundaries: { header: TextItem, maxX: number }[] = [];
+    for (let i = 0; i < headers.length; i++) {
+        const current = headers[i];
+        const next = headers[i + 1];
+
+        let maxX = Infinity;
+        if (next) {
+            // Midpoint between this header and next
+            maxX = (current.transform[CONFIG.IDX_X] + next.transform[CONFIG.IDX_X]) / 2;
+        }
+        boundaries.push({ header: current, maxX });
+    }
+
+    // Single pass through items (O(N))
+    for (const item of nonHeaderItems) {
+        const itemX = item.transform[CONFIG.IDX_X];
+        const itemY = item.transform[CONFIG.IDX_Y];
+
+        // Find which column it falls into
+        const match = boundaries.find(b => itemX < b.maxX);
+        if (match) {
+            // Only add if visually below the header line
+            if (itemY < match.header.transform[CONFIG.IDX_Y]) {
+                groups[match.header.str].push(item);
+            }
+        }
+    }
+
+    return groups;
+}
+
+/**
+ * Parses shift data from a single WhenToWork column into structured Shift objects.
+ */
+function parseWTWColumnShifts(items: TextItem[], dateHeader: string, year: number): Shift[] {
+    const shifts: Shift[] = [];
+
+    // Sort top-to-bottom
+    const sortedItems = items
+        .filter(i => i.str.trim().length > 0)
+        .sort((a, b) => b.transform[CONFIG.IDX_Y] - a.transform[CONFIG.IDX_Y]);
+
+    let currentJobTitle = "Unknown";
+    let lastItemWasDescription = false;
+    const fullDate = FormatUtils.parseDateWTW(dateHeader, year);
+
+    if (!fullDate) {
+        console.warn("Invalid date parsed:", dateHeader);
+        return [];
+    }
+
+    let i = 0;
+    while (i < sortedItems.length) {
+        const item = sortedItems[i];
+        const text = item.str;
+
+        // Try to match time patterns
+        const combinedMatch = text.match(REGEX_TIME_RANGE_COMBINED);
+        const singleStartMatch = text.match(REGEX_TIME_SINGLE);
+
+        if (combinedMatch && combinedMatch[2]) {
+            // Case A: "10am - 12pm" (Combined)
+            const startTime = combinedMatch[1];
+            const endTime = combinedMatch[2];
+
+            // Look ahead for description
+            let description = '';
+            let k = 1;
+            let lastY = item.transform[CONFIG.IDX_Y];
+            const descLines: string[] = [];
+
+            while (i + k < sortedItems.length) {
+                const nextItem = sortedItems[i + k];
+                const nextY = nextItem.transform[CONFIG.IDX_Y];
+                const dist = Math.abs(lastY - nextY);
+
+                if (dist > CONFIG.LINE_HEIGHT_THRESHOLD) {
+                    break;
+                }
+
+                if (nextItem.str.match(REGEX_TIME_SINGLE) ||
+                    nextItem.str.includes(CONFIG.WTW_SIGNATURE)) {
+                    break;
+                }
+
+                descLines.push(nextItem.str.trim());
+                lastY = nextY;
+                k++;
+            }
+
+            if (descLines.length > 0) {
+                description = descLines.join(' ');
+                i += k;
+                lastItemWasDescription = true;
+            } else {
+                i++;
+                lastItemWasDescription = false;
+            }
+
+            shifts.push({
+                date: fullDate,
+                startTime,
+                endTime,
+                totalHours: TimeUtils.calculateDuration(startTime, endTime),
+                jobTitle: currentJobTitle.trim(),
+                description,
+                isMigrated: false
+            });
+        }
+        else if (singleStartMatch) {
+            // Case B: "10am -" (Split Line)
+            const startTime = singleStartMatch[1];
+
+            // Look ahead for End Time (next item)
+            if (i + 1 < sortedItems.length) {
+                const nextItem = sortedItems[i + 1];
+                const endMatch = nextItem.str.match(REGEX_TIME_SINGLE);
+
+                if (endMatch) {
+                    const endTime = endMatch[1];
+                    let consumeCount = 2; // Default: consume Time1, Time2
+
+                    // Look ahead for description (after end time)
+                    let description = '';
+                    let k = 2; // Start checking after Time2
+                    let lastY = nextItem.transform[CONFIG.IDX_Y];
+                    const descLines: string[] = [];
+
+                    while (i + k < sortedItems.length) {
+                        const potentialDesc = sortedItems[i + k];
+                        const nextY = potentialDesc.transform[CONFIG.IDX_Y];
+                        const dist = Math.abs(lastY - nextY);
+
+                        if (dist > CONFIG.LINE_HEIGHT_THRESHOLD) break;
+
+                        if (potentialDesc.str.match(REGEX_TIME_SINGLE) ||
+                            potentialDesc.str.includes(CONFIG.WTW_SIGNATURE)) {
+                            break;
+                        }
+
+                        descLines.push(potentialDesc.str.trim());
+                        lastY = nextY;
+                        k++;
+                    }
+
+                    if (descLines.length > 0) {
+                        description = descLines.join(' ');
+                        consumeCount = k;
+                        lastItemWasDescription = true;
+                    } else {
+                        lastItemWasDescription = false;
+                    }
+
+                    shifts.push({
+                        date: fullDate,
+                        startTime,
+                        endTime,
+                        totalHours: TimeUtils.calculateDuration(startTime, endTime),
+                        jobTitle: currentJobTitle.trim(),
+                        description,
+                        isMigrated: false
+                    });
+                    i += consumeCount;
+                    continue;
+                }
+            }
+            i++;
+            lastItemWasDescription = false;
+        }
+        else {
+            // Not a time -> assume it's a Job Title
+            if (text.trim().length > 1 && !text.includes(CONFIG.WTW_SIGNATURE)) {
+                let appended = false;
+                if (!lastItemWasDescription && i > 0) {
+                    const prevItem = sortedItems[i - 1];
+                    const dist = Math.abs(prevItem.transform[CONFIG.IDX_Y] - item.transform[CONFIG.IDX_Y]);
+                    if (dist < CONFIG.LINE_HEIGHT_THRESHOLD) {
+                        currentJobTitle += " " + text;
+                        appended = true;
+                    }
+                }
+
+                if (!appended) {
+                    currentJobTitle = text;
+                }
+            }
+            i++;
+            lastItemWasDescription = false;
+        }
+    }
+
+    return shifts;
+}
+
+
+// ==========================================
+// ConnectTeam Parser
+// ==========================================
+
+async function parseConnectTeamPdf(pdf: any): Promise<Shift[]> {
+    const shifts: Shift[] = [];
+    let year = new Date().getFullYear();
+    let yearFound = false;
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const items = textContent.items as unknown as TextItem[];
+
+        // Group text items by physical line (Y-coordinate)
+        const lines = HelperUtils.groupItemsByLine(items);
+
+        const dateAnchors: DateAnchor[] = [];
+        const shiftLines: UnmatchedShift[] = [];
+
+        for (const line of lines) {
+            const fullLine = line.items.map(i => i.str).join(' ');
+
+            // 1. Try to find year
+            if (!yearFound) {
+                const foundYear = HelperUtils.findYearInText(fullLine);
+                if (foundYear) {
+                    year = foundYear;
+                    yearFound = true;
+                }
+            }
+
+            // 2. Identify Date Anchors (e.g. "Sat 6/7")
+            const dateMatch = fullLine.match(REGEX.DATE_ROW_CONNECT_TEAM);
+            if (dateMatch) {
+                dateAnchors.push({ date: dateMatch[1], y: line.y });
+            }
+
+            // 3. Identify Shift Rows
+            const shiftLine = HelperUtils.parseConnectTeamShiftLine(fullLine, line.y);
+            if (shiftLine) {
+                shiftLines.push(shiftLine);
+            }
+        }
+
+        // Match shifts to closest date anchor
+        if (dateAnchors.length > 0) {
+            shiftLines.forEach(shift => {
+                const bestAnchor = HelperUtils.findClosestY(shift.y, dateAnchors);
+                if (bestAnchor) {
+                    const [m, d] = bestAnchor.date.split('/');
+                    const fullDate = FormatUtils.formatIsoDate(year, m, d);
+
+                    shifts.push({
+                        date: fullDate,
+                        startTime: shift.startTime,
+                        endTime: shift.endTime,
+                        totalHours: shift.totalHours,
+                        jobTitle: shift.jobTitle,
+                        isMigrated: false
+                    });
+                }
+            });
+        }
+    }
+
+    if (shifts.length === 0) console.warn('No shifts parsed (ConnectTeam).');
+    return shifts;
+}
