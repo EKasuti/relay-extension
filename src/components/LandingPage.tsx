@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import relayLogo from '/logo.png';
-import { Plus, Wand2, Puzzle, FileText, Calendar } from 'lucide-react';
+import { Plus, Wand2, Puzzle, FileText, Calendar, X } from 'lucide-react';
 import Footer from './Footer';
 
 const PlatformCard = ({ platform }: { platform: any }) => {
@@ -11,8 +10,8 @@ const PlatformCard = ({ platform }: { platform: any }) => {
         <div className="relative flex flex-col items-center text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
             {platform.badge && (
                 <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${platform.badge.includes('Coming')
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-green-100 text-green-700'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-green-100 text-green-700'
                     }`}>
                     {platform.badge}
                 </div>
@@ -38,6 +37,8 @@ const PlatformCard = ({ platform }: { platform: any }) => {
 };
 
 const LandingPage = () => {
+    const [showPopup, setShowPopup] = useState(true);
+
     const supportedPlatforms = [
         {
             name: 'ConnectTeam',
@@ -63,7 +64,7 @@ const LandingPage = () => {
             description: 'For jobs where you don\'t clock in or out but need to randomize hours at the end of the pay period.',
             iconBg: 'bg-purple-50',
             iconColor: 'text-purple-600',
-            badge: 'Coming in v1.2.0'
+            badge: 'Available'
         },
         {
             name: 'Manual Entry',
@@ -90,8 +91,50 @@ const LandingPage = () => {
 
             {/* Main Content */}
             <main className="flex-grow">
+
+                {/* Announcement Banner */}
+                {showPopup && (
+                    <div className="max-w-4xl mx-auto px-6 mt-6 md:mt-8 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="bg-[#16467C] text-white p-4 rounded-xl shadow-lg shadow-blue-900/10 flex items-start md:items-center justify-between gap-4 relative overflow-hidden">
+                            {/* Decorative background element */}
+                            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/5 rounded-full blur-2xl"></div>
+
+                            <div className="flex items-start md:items-center gap-4 relative z-10">
+                                <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm flex-shrink-0">
+                                    <Puzzle size={20} className="text-blue-100" />
+                                </div>
+                                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                                    <span className="font-bold text-white tracking-wide text-sm md:text-base">New Update v1.2.0</span>
+                                    <span className="hidden md:inline-block w-1 h-1 rounded-full bg-white/30"></span>
+                                    <p className="text-blue-100 text-sm md:text-base leading-snug">
+                                        Random Schedule generation is now available! 🚀
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 relative z-10">
+                                <a
+                                    href="https://chromewebstore.google.com/detail/relay/ibahhfefmnkencndapdphhgbebddhbbe"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-1.5 bg-white text-[#16467C] text-sm font-bold rounded-lg hover:bg-blue-50 transition-colors shadow-sm whitespace-nowrap"
+                                >
+                                    View
+                                </a>
+                                <button
+                                    onClick={() => setShowPopup(false)}
+                                    className="text-white/60 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all flex-shrink-0"
+                                    aria-label="Close"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Hero Section */}
-                <section className="pt-16 pb-24 md:pt-24 md:pb-32 px-6">
+                <section className="pt-8 pb-24 md:pt-16 md:pb-32 px-6">
                     <div className="max-w-4xl mx-auto text-center">
 
                         {/* Status Badge */}
@@ -100,7 +143,7 @@ const LandingPage = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                             </span>
-                            Available v1.1.1
+                            Available v1.2.0
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.15]">
@@ -128,7 +171,7 @@ const LandingPage = () => {
                                 <span>Add to Chrome</span>
                             </a>
                             <span className="text-sm text-slate-400 font-medium tracking-wide">
-                                v1.1.1 Available on Chrome Web Store
+                                v1.2.0 Available on Chrome Web Store
                             </span>
                         </div>
 
