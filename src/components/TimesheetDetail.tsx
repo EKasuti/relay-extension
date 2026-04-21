@@ -20,6 +20,24 @@ import RandomShiftGenerator from './RandomShiftGenerator';
 const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jobTitle, onBack, onAddShift, onAddShifts, onTransferShifts, autoOpenGenerator, onDeleteShift, onEditShift }) => {
     const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
     const [showGenerator, setShowGenerator] = useState(false);
+    const MIN_TRANSFERABLE_HOURS = 1 / 60; // 1 minute
+
+    const formatShiftDateWithDay = (dateValue: string): string => {
+        // Parse date-only strings as local dates to avoid UTC weekday drift.
+        const isoDateMatch = dateValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const parsedDate = isoDateMatch
+            ? new Date(Number(isoDateMatch[1]), Number(isoDateMatch[2]) - 1, Number(isoDateMatch[3]))
+            : new Date(dateValue);
+
+        if (Number.isNaN(parsedDate.getTime())) return dateValue;
+
+        return parsedDate.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
 
     // Auto-open generator if requested and no shifts exist yet
     useEffect(() => {
@@ -38,9 +56,13 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
         setSelectedIndices(newSelection);
     };
 
+    const isShiftTooShortToTransfer = (shift: Shift): boolean => shift.totalHours < MIN_TRANSFERABLE_HOURS;
+    const isAlreadyFilledShift = (shift: Shift): boolean =>
+        shift.fillStatus === 'success' && (shift.fillMessage || '').toLowerCase().includes('already filled');
+
     // Optimize: Pre-calculate selectable indices to avoid O(n^2) operations in render and handlers
     const selectableIndices = shifts
-        .map((s, i) => (s.fillStatus !== 'success' ? i : -1))
+        .map((s, i) => (s.fillStatus !== 'success' && !isShiftTooShortToTransfer(s) ? i : -1))
         .filter(i => i !== -1);
 
     const allSelectableSelected = selectableIndices.length > 0 && selectableIndices.every(i => selectedIndices.has(i));
@@ -99,7 +121,7 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                             className="cursor-pointer"
                             checked={allSelectableSelected}
                             onChange={toggleAll}
-                            disabled={shifts.every(s => s.fillStatus === 'success')}
+                            disabled={selectableIndices.length === 0}
                         />
                         <span className="text-xs text-gray-500">Select All</span>
                     </div>
@@ -110,8 +132,13 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                         No shifts for this period yet.
                     </div>
                 ) : (
-                    shifts.map((shift, idx) => (
-                        <div key={idx} className={`flex gap-3 items-center p-3 rounded border transition-colors ${shift.fillStatus === 'success'
+                    shifts.map((shift, idx) => {
+                        const isTooShort = isShiftTooShortToTransfer(shift);
+                        const alreadyFilled = isAlreadyFilledShift(shift);
+                        const isDisabled = (shift.fillStatus === 'success' && !alreadyFilled) || isTooShort;
+
+                        return (
+                        <div key={idx} className={`flex gap-3 items-center p-3 rounded border transition-colors ${shift.fillStatus === 'success' && !alreadyFilled
                             ? 'bg-green-50 border-green-200 opacity-75'
                             : selectedIndices.has(idx)
                                 ? 'border-blue-500 bg-blue-50'
@@ -119,16 +146,22 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                             }`}>
                             <input
                                 type="checkbox"
-                                className={`h-4 w-4 ${shift.fillStatus === 'success' ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 cursor-pointer'}`}
-                                checked={selectedIndices.has(idx) || shift.fillStatus === 'success'}
-                                onChange={() => shift.fillStatus !== 'success' && toggleSelection(idx)}
-                                disabled={shift.fillStatus === 'success'}
+                                className={`h-4 w-4 ${isDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 cursor-pointer'}`}
+                                checked={selectedIndices.has(idx) || (shift.fillStatus === 'success' && !alreadyFilled)}
+                                onChange={() => !isDisabled && toggleSelection(idx)}
+                                disabled={isDisabled}
                             />
                             <div className="flex-1 flex justify-between items-center">
                                 <div>
-                                    <div className="font-medium text-gray-800">{new Date(shift.date).toLocaleDateString()}</div>
+                                    <div className="font-medium text-gray-800">{formatShiftDateWithDay(shift.date)}</div>
                                     <div className="text-xs text-gray-500">{shift.startTime} - {shift.endTime}</div>
                                     <div className="text-xs text-gray-500 font-mono">{shift.totalHours} hrs</div>
+                                    {isTooShort && (
+                                        <div className="text-xs text-amber-600 mt-1">Disabled: less than 1 minute</div>
+                                    )}
+                                    {alreadyFilled && (
+                                        <div className="text-xs text-green-600 mt-1">Already filled in JobX.</div>
+                                    )}
                                     {shift.description && (
                                         <div className="text-xs text-gray-400 italic mt-0.5 break-words max-w-[200px]">{shift.description}</div>
                                     )}
@@ -139,9 +172,14 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                                 </div>
                                 <div className="flex flex-col items-end">
                                     {/* Status Indicator */}
-                                    {shift.fillStatus === 'success' && (
+                                    {shift.fillStatus === 'success' && !alreadyFilled && (
                                         <span className="text-green-700 font-bold text-xs flex items-center bg-green-100 px-2 py-1 rounded-full">
                                             Filled
+                                        </span>
+                                    )}
+                                    {alreadyFilled && (
+                                        <span className="text-green-700 font-semibold text-xs flex items-center bg-green-100 px-2 py-1 rounded-full">
+                                            Already Filled
                                         </span>
                                     )}
                                     {shift.fillStatus === 'error' && (
@@ -174,7 +212,7 @@ const TimesheetDetail: React.FC<TimesheetDetailProps> = ({ timesheet, shifts, jo
                                 </div>
                             </div>
                         </div>
-                    ))
+                    )})
                 )}
             </div>
 

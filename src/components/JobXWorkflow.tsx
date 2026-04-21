@@ -10,6 +10,7 @@ import {
     startTimesheet,
     returnToTimesheetList,
     fillShiftRow,
+    checkExistingShiftEntry,
     checkValidationErrors,
     parseTime
 } from '../utils/jobx';
@@ -31,6 +32,20 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
     onExit,
     isRandomMode
 }) => {
+    const toDayNumber = (value: string): number | null => {
+        const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+            const y = Number(isoMatch[1]);
+            const m = Number(isoMatch[2]) - 1;
+            const d = Number(isoMatch[3]);
+            return new Date(y, m, d).getTime();
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).getTime();
+    };
+
     // Internal State
     const [step, setStep] = useState<'job-matching' | 'timesheet-selection' | 'timesheet-detail' | 'manual-entry'>('job-matching');
     const [scrapedTimesheets, setScrapedTimesheets] = useState<Timesheet[]>([]);
@@ -165,17 +180,31 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
     const handleTransferShifts = async (selectedShifts: Shift[]) => {
         setErrorMessage(null);
         let currentShifts = [...shifts];
+        const MIN_TRANSFERABLE_HOURS = 1 / 60; // 1 minute
 
         // Process shifts sequentially
         for (const shift of selectedShifts) {
             // Skip already filled shifts if needed, but user might want to retry error ones.
             if (shift.fillStatus === 'success') continue;
+            if (shift.totalHours < MIN_TRANSFERABLE_HOURS) {
+                currentShifts = updateShiftStatus(currentShifts, shift, 'error', 'Skipped: less than 1 minute');
+                setShifts(currentShifts);
+                continue;
+            }
 
             // Parse times before passing to script
             const startObj = parseTime(shift.startTime);
             const endObj = parseTime(shift.endTime);
             if (!startObj || !endObj) {
                 currentShifts = updateShiftStatus(currentShifts, shift, 'error', `Invalid time format: ${shift.startTime} - ${shift.endTime}`);
+                setShifts(currentShifts);
+                continue;
+            }
+
+            // If the exact shift already exists in JobX, mark as success and skip re-submission.
+            const existingCheck = await execute(checkExistingShiftEntry, [shift.date, startObj, endObj], 'MAIN');
+            if (existingCheck?.result?.exists) {
+                currentShifts = updateShiftStatus(currentShifts, shift, 'success', existingCheck.result.message || 'Already filled');
                 setShifts(currentShifts);
                 continue;
             }
@@ -279,36 +308,11 @@ const JobXWorkflow: React.FC<JobXWorkflowProps> = ({
                 <TimesheetDetail
                     timesheet={activeTimesheet}
                     shifts={shifts.filter(s => {
-                        const shiftDate = new Date(s.date);
-                        const start = new Date(activeTimesheet.startDate);
-                        const end = new Date(activeTimesheet.endDate);
+                        const shiftDay = toDayNumber(s.date);
+                        const startDay = toDayNumber(activeTimesheet.startDate);
+                        const endDay = toDayNumber(activeTimesheet.endDate);
 
-                        // If any of the dates cannot be parsed, exclude the shift from this timesheet.
-                        if (
-                            isNaN(shiftDate.getTime()) ||
-                            isNaN(start.getTime()) ||
-                            isNaN(end.getTime())
-                        ) {
-                            return false;
-                        }
-
-                        // Normalize to date-only (year, month, day) to avoid time-zone/off-by-one issues.
-                        const shiftDay = new Date(
-                            shiftDate.getFullYear(),
-                            shiftDate.getMonth(),
-                            shiftDate.getDate()
-                        );
-                        const startDay = new Date(
-                            start.getFullYear(),
-                            start.getMonth(),
-                            start.getDate()
-                        );
-                        const endDay = new Date(
-                            end.getFullYear(),
-                            end.getMonth(),
-                            end.getDate()
-                        );
-
+                        if (shiftDay === null || startDay === null || endDay === null) return false;
                         return shiftDay >= startDay && shiftDay <= endDay;
                     })}
                     jobTitle={activeJobTitle || 'Unknown Job'}
