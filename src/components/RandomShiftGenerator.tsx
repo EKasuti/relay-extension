@@ -13,6 +13,14 @@ interface RandomShiftGeneratorProps {
 }
 
 export default function RandomShiftGenerator({ startDate, endDate, jobTitle, onGenerate, onCancel }: RandomShiftGeneratorProps) {
+    const parseAsLocalDate = (value: string): Date => {
+        const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+        }
+        return new Date(value);
+    };
+
     // Config State
     const [targetHours, setTargetHours] = useState<number>(10);
     const [minShiftHours, setMinShiftHours] = useState<number>(2);
@@ -26,8 +34,8 @@ export default function RandomShiftGenerator({ startDate, endDate, jobTitle, onG
 
     // Initialize dates on mount
     useEffect(() => {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = parseAsLocalDate(startDate);
+        const end = parseAsLocalDate(endDate);
         const dates: string[] = [];
 
         // Normalize time to noon to avoid DST issues when iterating

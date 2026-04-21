@@ -27,6 +27,24 @@ export const scrapeTimesheets = (): { success: boolean; data?: Timesheet[]; mess
     const table = document.getElementById('Skin_body_TimesheetList');
     if (!table) return { success: false, message: 'Timesheet table not found.' };
 
+    const toIsoDate = (value: string): string | null => {
+        const trimmed = value.trim();
+
+        // MM/DD/YYYY -> YYYY-MM-DD
+        const mdyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (mdyMatch) {
+            const month = mdyMatch[1].padStart(2, '0');
+            const day = mdyMatch[2].padStart(2, '0');
+            const year = mdyMatch[3];
+            return `${year}-${month}-${day}`;
+        }
+
+        const parsed = new Date(trimmed);
+        if (Number.isNaN(parsed.getTime())) return null;
+
+        return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+    };
+
     const parseDateRange = (text: string) => {
         let startStr: string, endStr: string;
 
@@ -51,13 +69,12 @@ export const scrapeTimesheets = (): { success: boolean; data?: Timesheet[]; mess
             if (!endStr.match(/\d{4}/)) endStr += ` ${currentYear}`;
         }
 
-        const startDate = new Date(startStr);
-        const endDate = new Date(endStr);
+        const startIso = toIsoDate(startStr);
+        const endIso = toIsoDate(endStr);
 
-        // Validation
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return null;
+        if (!startIso || !endIso) return null;
 
-        return { start: startDate.toISOString(), end: endDate.toISOString() };
+        return { start: startIso, end: endIso };
     };
 
     const rows = Array.from(table.querySelectorAll('tbody tr'));
@@ -186,7 +203,7 @@ export const parseTime = (timeStr: string) => {
     if (!match) return null;
 
     let h = parseInt(match[1], 10);
-    let m = match[2] ? parseInt(match[2], 10) : 0;
+    const m = match[2] ? parseInt(match[2], 10) : 0;
 
     if (m < 0 || m > 59) return null;
 
@@ -228,18 +245,30 @@ export const fillShiftRow = (
     start: { hour: string; minute: string; period: string },
     end: { hour: string; minute: string; period: string }
 ): { success: boolean; message: string; debug?: string } => {
+    // Parse date-only strings as calendar dates to avoid timezone drift.
+    const isoMatch = shiftDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    let targetDateStr = '';
 
-    const shiftD = new Date(shiftDate);
-    // Format: MM/DD/YYYY
-    const targetDateStr = `${shiftD.getMonth() + 1}/${shiftD.getDate()}/${shiftD.getFullYear()}`;
+    if (isoMatch) {
+        targetDateStr = `${Number(isoMatch[2])}/${Number(isoMatch[3])}/${isoMatch[1]}`;
+    } else {
+        const shiftD = new Date(shiftDate);
+        if (Number.isNaN(shiftD.getTime())) {
+            return { success: false, message: `Invalid shift date: ${shiftDate}` };
+        }
+        targetDateStr = `${shiftD.getMonth() + 1}/${shiftD.getDate()}/${shiftD.getFullYear()}`;
+    }
 
     // Find hidden input closest to this date
     const inputs = Array.from(document.querySelectorAll('input[type="hidden"]'));
-    const targetInput = inputs.find(input =>
-        (input as HTMLInputElement).value &&
-        (input as HTMLInputElement).value.startsWith(targetDateStr) &&
-        (input as HTMLInputElement).id.includes('QuickDate')
-    );
+    const targetInput = inputs.find(input => {
+        const value = (input as HTMLInputElement).value;
+        if (!value || !(input as HTMLInputElement).id.includes('QuickDate')) return false;
+
+        // Support values like "4/19/2026 12:00:00 AM" while avoiding loose prefix collisions.
+        const datePart = value.trim().split(/\s+/)[0];
+        return datePart === targetDateStr;
+    });
 
     if (!targetInput) {
         return { success: false, message: `Could not find row for date ${targetDateStr}` };
@@ -302,6 +331,53 @@ export const fillShiftRow = (
     }
 
     return { success: false, message: `Could not find Save button for ${targetDateStr}`, debug: debugLog.join(', ') };
+};
+
+export const checkExistingShiftEntry = (
+    shiftDate: string,
+    start: { hour: string; minute: string; period: string },
+    end: { hour: string; minute: string; period: string }
+): { exists: boolean; message?: string } => {
+    const isoMatch = shiftDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    let expectedDateLabel = '';
+
+    if (isoMatch) {
+        const dateObj = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+        expectedDateLabel = dateObj.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        }).toLowerCase();
+    } else {
+        const parsed = new Date(shiftDate);
+        if (Number.isNaN(parsed.getTime())) return { exists: false, message: `Invalid shift date: ${shiftDate}` };
+        expectedDateLabel = parsed.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        }).toLowerCase();
+    }
+
+    const expectedStart = `${start.hour}:${start.minute} ${start.period}`.toLowerCase();
+    const expectedEnd = `${end.hour}:${end.minute} ${end.period}`.toLowerCase();
+
+    const tableRows = Array.from(document.querySelectorAll('tr'));
+    for (const row of tableRows) {
+        const rawText = row.textContent || '';
+        if (!rawText) continue;
+
+        const rowText = rawText.replace(/\s+/g, ' ').trim().toLowerCase();
+        if (!rowText.includes(expectedDateLabel)) continue;
+
+        // Existing entries usually show as "Reg Hours" with explicit start/end time and hrs.
+        if (rowText.includes('reg hours') && rowText.includes(expectedStart) && rowText.includes(expectedEnd)) {
+            return { exists: true, message: 'Already filled in JobX' };
+        }
+    }
+
+    return { exists: false };
 };
 
 export const checkValidationErrors = (): { hasError: boolean; message?: string } => {

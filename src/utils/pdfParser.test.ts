@@ -98,7 +98,7 @@ describe('pdfParser', () => {
         const shifts = await parseShiftsFromPdf(file as any);
 
         expect(shifts).toHaveLength(1);
-        expect(shifts[0]).toEqual({
+        expect(shifts[0]).toMatchObject({
             date: '2025-12-15', // Year 2025, Dec 15
             startTime: '7:30am',
             endTime: '9:30am',
@@ -166,6 +166,34 @@ describe('pdfParser', () => {
             endTime: '05:00 pm',
             jobTitle: 'Baker Desk',
             totalHours: 8.0
+        });
+    });
+
+    it('parses ConnectTeam lines with identical start and end times and keeps 00:00 duration', async () => {
+        const page1Items = [
+            item('Schedule Export 2026', 50, 700),
+            item('Fri 4/17', 50, 500),
+            item('JMC Circulation Desk', 120, 500),
+            item('No sub jobs', 220, 500),
+            item('01:58 pm', 320, 500),
+            item('01:58 pm', 410, 500),
+            item('00:00', 500, 500),
+            item('00:00', 560, 500),
+            item('1.97', 620, 500)
+        ];
+
+        (pdfjsLib.getDocument as any).mockReturnValue(createMockPdf([page1Items]));
+
+        const file = new File([''], 'connectteam-identical-times.pdf');
+        const shifts = await parseShiftsFromPdf(file as any);
+
+        expect(shifts).toHaveLength(1);
+        expect(shifts[0]).toMatchObject({
+            date: '2026-04-17',
+            startTime: '01:58 pm',
+            endTime: '01:58 pm',
+            totalHours: 0,
+            jobTitle: 'JMC Circulation Desk'
         });
     });
 

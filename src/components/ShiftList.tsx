@@ -49,6 +49,23 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
         }));
     };
 
+    const formatShiftDateWithDay = (dateValue: string): string => {
+        // Parse date-only strings as local dates to avoid UTC day shifts.
+        const isoDateMatch = dateValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const parsedDate = isoDateMatch
+            ? new Date(Number(isoDateMatch[1]), Number(isoDateMatch[2]) - 1, Number(isoDateMatch[3]))
+            : new Date(dateValue);
+
+        if (Number.isNaN(parsedDate.getTime())) return dateValue;
+
+        return parsedDate.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
     return (
         <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 overflow-y-auto min-h-[300px] md:min-h-[600px] animate-slideUp">
             {isRandomMode ? (
@@ -201,7 +218,7 @@ const ShiftList: React.FC<ShiftListProps & { onAddManualShift: () => void; avail
                             <div key={shiftKey} className="flex flex-col gap-1 p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition-colors">
                                 <div>
                                     <div className="font-bold text-gray-800 flex items-center gap-2">
-                                        {shift.date}
+                                        {formatShiftDateWithDay(shift.date)}
                                         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${mappedJob ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
                                             {mappedJob || shift.jobTitle}
                                         </span>

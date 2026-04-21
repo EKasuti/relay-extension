@@ -169,7 +169,11 @@ const HelperUtils = {
         const endTime = timeMatches[1][1];
 
         // Extract total hours
-        const afterEndTime = fullLine.substring(fullLine.indexOf(endTime) + endTime.length);
+        // Use the second time token's index to avoid slicing from the first
+        // occurrence when startTime and endTime are identical (e.g. "01:58 pm ... 01:58 pm").
+        const endTimeMatchIndex = timeMatches[1].index;
+        if (endTimeMatchIndex === undefined) return null;
+        const afterEndTime = fullLine.substring(endTimeMatchIndex + endTime.length);
         const durationMatch = afterEndTime.match(/\b(\d{1,2}:\d{2})\b/);
         let totalHours = 0;
 
@@ -181,7 +185,9 @@ const HelperUtils = {
             if (decimalMatch) totalHours = parseFloat(decimalMatch[1]);
         }
 
-        if (totalHours <= 0) return null;
+        // Keep zero-hour shifts (e.g. start=end with "00:00" duration);
+        // only reject clearly invalid negative/NaN durations.
+        if (!Number.isFinite(totalHours) || totalHours < 0) return null;
 
         // Clean up Job Title
         const timeIndex = fullLine.indexOf(startTime);

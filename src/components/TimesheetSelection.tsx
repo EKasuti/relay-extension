@@ -9,13 +9,30 @@ interface TimesheetSelectionProps {
 }
 
 const TimesheetSelection: React.FC<TimesheetSelectionProps> = ({ timesheets, shifts, onSelect, onBack }) => {
+    const toDayNumber = (value: string): number | null => {
+        const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+            const y = Number(isoMatch[1]);
+            const m = Number(isoMatch[2]) - 1;
+            const d = Number(isoMatch[3]);
+            return new Date(y, m, d).getTime();
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).getTime();
+    };
+
     // Helper to calculate overlap count (for user info)
     const getShiftCountForRange = (start: string, end: string) => {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
+        const startDay = toDayNumber(start);
+        const endDay = toDayNumber(end);
+        if (startDay === null || endDay === null) return 0;
+
         return shifts.filter(s => {
-            const d = new Date(s.date);
-            return d >= startDate && d <= endDate;
+            const shiftDay = toDayNumber(s.date);
+            if (shiftDay === null) return false;
+            return shiftDay >= startDay && shiftDay <= endDay;
         }).length;
     };
 
