@@ -2,7 +2,7 @@ import { Wand2, Plus, FileText, Calendar } from 'lucide-react';
 import { useState } from 'react';
 
 interface SourceSelectionProps {
-    onSelectType: (type: 'import-instructions' | 'manual-entry' | 'import-whentowork' | 'random-schedule') => void;
+    onSelectType: (type: 'import-instructions' | 'manual-entry' | 'import-whentowork' | 'random-schedule' | 'import-dali') => void;
     onContinue: () => void;
     hasShifts: boolean;
     shiftCount: number;
@@ -39,6 +39,18 @@ const SourceSelection: React.FC<SourceSelectionProps> = ({ onSelectType, onConti
         <div className="w-full bg-white p-4 rounded-lg shadow border border-gray-200 mb-4 transition-all">
             <h2 className="text-lg font-semibold mb-3 text-gray-800">Add Shifts From</h2>
             <div className="grid grid-cols-2 gap-3 mb-3">
+                <button
+                    onClick={() => onSelectType('import-dali')}
+                    className="col-span-2 flex items-center justify-center p-4 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all group gap-3"
+                >
+                    <div className="p-2 bg-blue-200 rounded-full text-blue-700 group-hover:scale-110 transition-transform">
+                        <Calendar size={24} />
+                    </div>
+                    <div className="text-left">
+                        <div className="font-bold text-blue-700 text-lg">DALI OS</div>
+                        <span className="text-xs text-blue-600">Import your logged hours</span>
+                    </div>
+                </button>
                 <button
                     onClick={() => onSelectType('random-schedule')}
                     className="col-span-2 flex items-center justify-center p-4 border border-purple-200 bg-purple-50 rounded-lg hover:bg-purple-100 hover:border-purple-300 hover:shadow-md transition-all group gap-3"

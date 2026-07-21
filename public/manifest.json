@@ -14,12 +14,15 @@
   },
   "permissions": [
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "storage"
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
   "host_permissions": [
-    "https://dartmouth.studentemployment.ngwebsolutions.com/*"
+    "https://dartmouth.studentemployment.ngwebsolutions.com/*",
+    "https://os.dali.dartmouth.edu/*",
+    "http://localhost:3001/*"
   ]
 }
