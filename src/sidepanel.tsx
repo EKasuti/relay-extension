@@ -7,6 +7,7 @@ import SourceSelection from './components/SourceSelection'
 import Instructions from './components/Instructions'
 import Upload from './components/Upload'
 import ManualEntry from './components/ManualEntry'
+import DaliImport from './components/DaliImport'
 import JobXWorkflow from './components/JobXWorkflow'
 import { scrapeJobTitles } from './utils/jobx'
 import { Globe, RotateCcw } from 'lucide-react'
@@ -21,6 +22,7 @@ function Sidepanel() {
         'import-whentowork' |
         'import-whentowork-upload' |
         'import-upload' |
+        'import-dali' |
         'job-matching' |
         'manual-entry'
     >('select-source');
@@ -164,6 +166,13 @@ function Sidepanel() {
                     onBack={() => setStep('import-whentowork')}
                     onShiftsParsed={handleShiftsParsed}
                     source="whentowork"
+                />
+            )}
+
+            {step === 'import-dali' && (
+                <DaliImport
+                    onBack={() => setStep('select-source')}
+                    onShiftsParsed={handleShiftsParsed}
                 />
             )}
 
